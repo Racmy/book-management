@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Book List</title>
+</head>
+<body>
+  <h1>Book List</h1>
+  <table>
+    {{range .}}
+    <tr>
+      <td>{{.Id}}</td>
+      <td>{{.Title}}</td>
+      <td>{{.Author}}</td>
+      <td>{{.Latest_Issue}}</td>
+    </tr>
+    {{end}}
+  </table> 
+</body>
