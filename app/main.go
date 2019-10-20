@@ -11,9 +11,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var tmpl = template.Must(template.ParseFiles("./template/base.html"))
+/*
+	本を登録画面へのハンドラ
+*/
+func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
+	var tmpl = template.Must(template.ParseFiles("./template/base.html"))
 
-func rootHandler(w http.ResponseWriter, r *http.Request) {
 	// テンプレートに埋め込むデータ作成
 	dat := struct {
 		Title string
@@ -29,18 +32,31 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func dbHandler(w http.ResponseWriter, r *http.Request) {
+/*
+	ホーム画面へのハンドラ
+*/
+func homeHandler(w http.ResponseWriter, r *http.Request) {
 	var tpl = template.Must(template.ParseFiles("./template/list.html"))
 	books := db.GetAllBooks()
 	if err := tpl.ExecuteTemplate(w, "list.html", books); err != nil {
 		log.Fatal(err)
 	}
 }
+
+/*
+	本詳細画面へのハンドラ
+*/
+func bookDetailHandler(w http.ResponseWriter, r *http.Request) {}
+
+/*
+	ルーティング
+*/
 func main() {
 
 	r := mux.NewRouter()
-	r.HandleFunc("/", rootHandler)
-	r.HandleFunc("/db", dbHandler)
+	r.HandleFunc("/book-regist", bookRegistHandler)
+	r.HandleFunc("/", homeHandler)
+
 	http.Handle("/", r)
 	http.ListenAndServe(":3000", nil)
 }
