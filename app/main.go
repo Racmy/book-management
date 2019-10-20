@@ -56,7 +56,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/book-regist", bookRegistHandler)
 	r.HandleFunc("/", homeHandler)
-
+	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	http.Handle("/", r)
 	http.ListenAndServe(":3000", nil)
 }
