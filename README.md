@@ -21,3 +21,5 @@ https://docs.docker.com/install/
 【サーバーのログ確認方法】
 1. docker-compose logs
 
+【サーバへの入り方】
+1. docker exec -it [containerID] /bin/bash
