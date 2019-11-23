@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Book List</title>
+  <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+</head>
+<body>
+  <header class="sticky-top">
+    <h1>本の登録</h1>
+  </header>
+  <form action = "/book-insert" method="POST">
+    タイトル:<input type="text" name="Title">
+    <br>
+    著者　　:<input type="text" name="Author">
+    <br>
+    <input type="submit" value="登録">
+  </form>
+  
+  
+</body>

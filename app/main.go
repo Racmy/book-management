@@ -15,7 +15,7 @@ import (
 	本を登録画面へのハンドラ
 */
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
-	var tmpl = template.Must(template.ParseFiles("./template/base.html"))
+	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
 
 	// テンプレートに埋め込むデータ作成
 	dat := struct {
@@ -26,12 +26,40 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 		Time:  time.Now(),
 	}
 	// テンプレートにデータを埋め込む
-	if err := tmpl.ExecuteTemplate(w, "base.html", dat); err != nil {
+	if err := tmpl.ExecuteTemplate(w, "bookRegist.html", dat); err != nil {
 		log.Fatal(err)
 	}
 
 }
+/*
+	本を登録画面へのハンドラ
+*/
+func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
+	var tmpl = template.Must(template.ParseFiles("./template/bookRegistResult.html"))
+	r.ParseForm()
+	log.Print("Method:"+r.Method)
+	tmpTitle := r.Form["Title"][0]
+	log.Print(tmpTitle)
+	tmpAuthor := r.Form["Author"][0]
 
+	insertBook := db.Book{Title: tmpTitle,Author: tmpAuthor}
+	db.InsertBook(insertBook)
+	
+	// テンプレートに埋め込むデータ作成
+	dat := struct {
+		Title string
+		Author string
+	}{
+		Title: tmpTitle,
+		Author: tmpAuthor,
+	}
+
+	// テンプレートにデータを埋め込む
+	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", dat); err != nil {
+		log.Fatal(err)
+	}
+
+}
 /*
 	ホーム画面へのハンドラ
 */
@@ -55,6 +83,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/book-regist", bookRegistHandler)
+	r.HandleFunc("/book-insert", bookInsertHandler)
 	r.HandleFunc("/", homeHandler)
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	http.Handle("/", r)
