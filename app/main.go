@@ -9,14 +9,33 @@ import (
 	"github.com/gorilla/mux"
 	"strconv"
 )
-
+type RegistValue struct {
+	Title string
+	Author string
+	Latest_Issue float64
+}
 /*
 	本を登録画面へのハンドラ
 */
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
+	
+	tmpTitle := r.FormValue("Title")
+	tmpAuthor := r.FormValue("Author")
+	tmpLatest_Issue_String := r.FormValue("Latest_Issue")
+	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
 
-	if err := tmpl.Execute(w, "bookRegist.html"); err != nil {
+	if strConvErr != nil {
+		tmpLatest_Issue = 1
+	}
+
+	tmp := RegistValue {
+		Title: tmpTitle,
+		Author: tmpAuthor,
+		Latest_Issue: tmpLatest_Issue,
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "bookRegist.html",tmp); err != nil {
 		log.Fatal(err)
 	}
 
@@ -32,14 +51,16 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	tmpLatest_Issue_String := r.Form["Latest_Issue"][0]
 	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
 
-	if strConvErr !=nil{
-		tmpLatest_Issue = 1;
+	if (tmpTitle == "") || (tmpAuthor == "") || (strConvErr != nil) {
+		var url = "/regist"
+		url += "?Title=" + r.Form["Title"][0] + "&Author=" + r.Form["Author"][0] + "&Latest_Issue=" + r.Form["Latest_Issue"][0]
+		http.Redirect(w,r,url,http.StatusFound)
 	}
 
 	insertBook := db.Book{Title: tmpTitle,Author: tmpAuthor,Latest_Issue: tmpLatest_Issue}
 	
 	dbErr := db.InsertBook(insertBook)
-	if dbErr != nil{
+	if  (dbErr != nil) {
 		http.Redirect(w,r,"/",http.StatusFound)
 	}
 	// テンプレートに埋め込むデータ作成
