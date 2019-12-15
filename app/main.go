@@ -4,8 +4,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"time"
-
 	"github.com/docker_go_nginx/app/db"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -18,16 +16,7 @@ import (
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
 
-	// テンプレートに埋め込むデータ作成
-	dat := struct {
-		Title string
-		Time  time.Time
-	}{
-		Title: "Test",
-		Time:  time.Now(),
-	}
-	// テンプレートにデータを埋め込む
-	if err := tmpl.ExecuteTemplate(w, "bookRegist.html", dat); err != nil {
+	if err := tmpl.Execute(w, "bookRegist.html"); err != nil {
 		log.Fatal(err)
 	}
 
@@ -38,16 +27,21 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegistResult.html"))
 	r.ParseForm()
-	log.Print("Method:"+r.Method)
 	tmpTitle := r.Form["Title"][0]
-	log.Print(tmpTitle)
 	tmpAuthor := r.Form["Author"][0]
 	tmpLatest_Issue_String := r.Form["Latest_Issue"][0]
-	tmpLatest_Issue , _ := strconv.ParseFloat(tmpLatest_Issue_String,64)
+	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
+
+	if strConvErr !=nil{
+		tmpLatest_Issue = 1;
+	}
 
 	insertBook := db.Book{Title: tmpTitle,Author: tmpAuthor,Latest_Issue: tmpLatest_Issue}
-	db.InsertBook(insertBook)
 	
+	dbErr := db.InsertBook(insertBook)
+	if dbErr != nil{
+		http.Redirect(w,r,"/",http.StatusFound)
+	}
 	// テンプレートに埋め込むデータ作成
 	dat := struct {
 		Title string
@@ -87,8 +81,8 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {}
 func main() {
 
 	r := mux.NewRouter()
-	r.HandleFunc("/book-regist", bookRegistHandler)
-	r.HandleFunc("/book-insert", bookInsertHandler)
+	r.HandleFunc("/regist", bookRegistHandler)
+	r.HandleFunc("/regist/success", bookInsertHandler)
 	r.HandleFunc("/", homeHandler)
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	http.Handle("/", r)
