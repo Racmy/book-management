@@ -63,7 +63,6 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {}
 */
 func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 
-	// 【TODO】インデックスで参照しているため、エラーハンドリング
 	query := r.URL.Query()
 
 	if keyword := query.Get("keyword"); query.Get("keyword") != "" {
@@ -95,7 +94,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/book-regist", bookRegistHandler)
 	r.HandleFunc("/", homeHandler)
-	r.HandleFunc("/book-search", bookSearchHandler)
+	r.HandleFunc("/search", bookSearchHandler)
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	http.Handle("/", r)
 	http.ListenAndServe(":3000", nil)
