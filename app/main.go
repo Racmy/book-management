@@ -4,13 +4,16 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"time"
-
 	"github.com/docker_go_nginx/app/db"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"strconv"
 )
-
+type RegistValue struct {
+	Title string
+	Author string
+	Latest_Issue float64
+}
 /*
 	レスポンスデータ
 */
@@ -23,23 +26,68 @@ type ResponseData struct {
 	本を登録画面へのハンドラ
 */
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
-	var tmpl = template.Must(template.ParseFiles("./template/base.html"))
+	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
+	
+	tmpTitle := r.FormValue("Title")
+	tmpAuthor := r.FormValue("Author")
+	tmpLatest_Issue_String := r.FormValue("Latest_Issue")
+	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
 
-	// テンプレートに埋め込むデータ作成
-	dat := struct {
-		Title string
-		Time  time.Time
-	}{
-		Title: "Test",
-		Time:  time.Now(),
+	if strConvErr != nil {
+		tmpLatest_Issue = 1
 	}
-	// テンプレートにデータを埋め込む
-	if err := tmpl.ExecuteTemplate(w, "base.html", dat); err != nil {
+
+	tmp := RegistValue {
+		Title: tmpTitle,
+		Author: tmpAuthor,
+		Latest_Issue: tmpLatest_Issue,
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "bookRegist.html",tmp); err != nil {
 		log.Fatal(err)
 	}
 
 }
+/*
+	本を登録画面へのハンドラ
+*/
+func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
+	var tmpl = template.Must(template.ParseFiles("./template/bookRegistResult.html"))
+	r.ParseForm()
+	tmpTitle := r.Form["Title"][0]
+	tmpAuthor := r.Form["Author"][0]
+	tmpLatest_Issue_String := r.Form["Latest_Issue"][0]
+	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
 
+	if (tmpTitle == "") || (tmpAuthor == "") || (strConvErr != nil) {
+		var url = "/regist"
+		url += "?Title=" + r.Form["Title"][0] + "&Author=" + r.Form["Author"][0] + "&Latest_Issue=" + r.Form["Latest_Issue"][0]
+		http.Redirect(w,r,url,http.StatusFound)
+	}
+
+	insertBook := db.Book{Title: tmpTitle,Author: tmpAuthor,Latest_Issue: tmpLatest_Issue}
+	
+	dbErr := db.InsertBook(insertBook)
+	if  (dbErr != nil) {
+		http.Redirect(w,r,"/",http.StatusFound)
+	}
+	// テンプレートに埋め込むデータ作成
+	dat := struct {
+		Title string
+		Author string
+		Latest_Issue float64
+	}{
+		Title: tmpTitle,
+		Author: tmpAuthor,
+		Latest_Issue: tmpLatest_Issue,
+	}
+
+	// テンプレートにデータを埋め込む
+	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", dat); err != nil {
+		log.Fatal(err)
+	}
+
+}
 /*
 	ホーム画面へのハンドラ
 */
@@ -94,7 +142,8 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	r := mux.NewRouter()
-	r.HandleFunc("/book-regist", bookRegistHandler)
+	r.HandleFunc("/regist", bookRegistHandler)
+	r.HandleFunc("/regist/success", bookInsertHandler)
 	r.HandleFunc("/", homeHandler)
 	r.HandleFunc("/search", bookSearchHandler)
 	r.HandleFunc("/detail", bookDetailHandler)

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Book List</title>
+  <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+</head>
+<body>
+  <header class="sticky-top">
+    <h1>本の登録</h1>
+  </header>
+  <form action = "/regist/success" method="POST">
+    タイトル:<input type="text" name="Title" value="{{.Title}}" >
+    <br>
+    著者　　:<input type="text" name="Author" value="{{.Author}}">
+    <br>
+    所持巻数  ：<input type="tel" name="Latest_Issue" value="{{.Latest_Issue}}">
+    <input type="submit" value="登録">
+  </form>
+  <form action = "/" method= "GET">
+    <input type="submit" value="戻る">
+  </form>
+</body>

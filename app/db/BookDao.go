@@ -10,7 +10,7 @@ type Book struct {
 	Id                     int
 	Title                  string
 	Author                 string
-	Latest_Issue           float32
+	Latest_Issue           float64
 	Front_Cover_Image_Path string
 }
 
@@ -40,6 +40,18 @@ func GetAllBooks() []Book {
 		books = append(books, book)
 	}
 	return books
+}
+
+func InsertBook(book Book) error{
+	db := dbSetUp()
+	defer db.Close() // 関数がリターンする直前に呼び出される
+	
+	ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?)")
+	errCheck(err)
+	// Bookを格納する
+	_, err = ins.Exec(&book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
+
+	return err
 }
 
 func GetSearchedBooks(keyword string) []Book {
