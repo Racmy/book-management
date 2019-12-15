@@ -10,7 +10,7 @@ type Book struct {
 	Id                     int
 	Title                  string
 	Author                 string
-	Latest_Issue           float32
+	Latest_Issue           float64
 	Front_Cover_Image_Path string
 }
 

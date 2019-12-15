@@ -9,6 +9,7 @@ import (
 	"github.com/docker_go_nginx/app/db"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"strconv"
 )
 
 /*
@@ -41,17 +42,21 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	tmpTitle := r.Form["Title"][0]
 	log.Print(tmpTitle)
 	tmpAuthor := r.Form["Author"][0]
+	tmpLatest_Issue_String := r.Form["Latest_Issue"][0]
+	tmpLatest_Issue , _ := strconv.ParseFloat(tmpLatest_Issue_String,64)
 
-	insertBook := db.Book{Title: tmpTitle,Author: tmpAuthor}
+	insertBook := db.Book{Title: tmpTitle,Author: tmpAuthor,Latest_Issue: tmpLatest_Issue}
 	db.InsertBook(insertBook)
 	
 	// テンプレートに埋め込むデータ作成
 	dat := struct {
 		Title string
 		Author string
+		Latest_Issue float64
 	}{
 		Title: tmpTitle,
 		Author: tmpAuthor,
+		Latest_Issue: tmpLatest_Issue,
 	}
 
 	// テンプレートにデータを埋め込む
