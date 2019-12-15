@@ -15,6 +15,14 @@ type RegistValue struct {
 	Latest_Issue float64
 }
 /*
+	レスポンスデータ
+*/
+type ResponseData struct {
+	Keyword string
+	Books   []db.Book
+}
+
+/*
 	本を登録画面へのハンドラ
 */
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
@@ -85,8 +93,10 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 */
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	var tpl = template.Must(template.ParseFiles("./template/list.html"))
-	books := db.GetAllBooks()
-	if err := tpl.ExecuteTemplate(w, "list.html", books); err != nil {
+	var responseData ResponseData
+	responseData.Books = db.GetAllBooks()
+	responseData.Keyword = ""
+	if err := tpl.ExecuteTemplate(w, "list.html", responseData); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -94,7 +104,37 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 /*
 	本詳細画面へのハンドラ
 */
-func bookDetailHandler(w http.ResponseWriter, r *http.Request) {}
+func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+/*
+	本の検索のためのハンドラ
+*/
+func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
+
+	query := r.URL.Query()
+
+	if keyword := query.Get("keyword"); query.Get("keyword") != "" {
+		// keywordがnullの場合は、HOMEへリダイレクト
+		if keyword == "" {
+			http.Redirect(w, r, "/", http.StatusFound)
+		}
+
+		var tpl = template.Must(template.ParseFiles("./template/list.html"))
+
+		// ResponseDataの作成
+		var responseData ResponseData
+		responseData.Keyword = keyword
+		responseData.Books = db.GetSearchedBooks(keyword)
+
+		if err := tpl.ExecuteTemplate(w, "list.html", responseData); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		http.Redirect(w, r, "/", http.StatusFound)
+	}
+}
 
 /*
 	ルーティング
@@ -105,6 +145,8 @@ func main() {
 	r.HandleFunc("/regist", bookRegistHandler)
 	r.HandleFunc("/regist/success", bookInsertHandler)
 	r.HandleFunc("/", homeHandler)
+	r.HandleFunc("/search", bookSearchHandler)
+	r.HandleFunc("/detail", bookDetailHandler)
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	http.Handle("/", r)
 	http.ListenAndServe(":3000", nil)
