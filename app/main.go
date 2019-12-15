@@ -56,7 +56,9 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 /*
 	本詳細画面へのハンドラ
 */
-func bookDetailHandler(w http.ResponseWriter, r *http.Request) {}
+func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusFound)
+}
 
 /*
 	本の検索のためのハンドラ
@@ -67,7 +69,7 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if keyword := query.Get("keyword"); query.Get("keyword") != "" {
 		// keywordがnullの場合は、HOMEへリダイレクト
-		if len(keyword) == 0 {
+		if keyword == "" {
 			http.Redirect(w, r, "/", http.StatusFound)
 		}
 
@@ -95,6 +97,7 @@ func main() {
 	r.HandleFunc("/book-regist", bookRegistHandler)
 	r.HandleFunc("/", homeHandler)
 	r.HandleFunc("/search", bookSearchHandler)
+	r.HandleFunc("/detail", bookDetailHandler)
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	http.Handle("/", r)
 	http.ListenAndServe(":3000", nil)

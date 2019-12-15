@@ -46,7 +46,7 @@ func GetSearchedBooks(keyword string) []Book {
 	keyword = "%" + keyword + "%"
 	db := dbSetUp()
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM book WHERE title LIKE ? OR author LIKE ? OR latest_issue LIKE ?", keyword, keyword, keyword)
+	rows, err := db.Query("SELECT * FROM book WHERE title LIKE ? OR author LIKE ?", keyword, keyword)
 	errCheck(err)
 	// Bookを格納するArray作成
 	var books = []Book{}
