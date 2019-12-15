@@ -64,22 +64,26 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {}
 func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 【TODO】インデックスで参照しているため、エラーハンドリング
-	keyword := r.URL.Query()["keyword"][0]
+	query := r.URL.Query()
 
-	// keywordがnullの場合は、HOMEへリダイレクト
-	if len(keyword) == 0 {
+	if keyword := query.Get("keyword"); query.Get("keyword") != "" {
+		// keywordがnullの場合は、HOMEへリダイレクト
+		if len(keyword) == 0 {
+			http.Redirect(w, r, "/", http.StatusFound)
+		}
+
+		var tpl = template.Must(template.ParseFiles("./template/list.html"))
+
+		// ResponseDataの作成
+		var responseData ResponseData
+		responseData.Keyword = keyword
+		responseData.Books = db.GetSearchedBooks(keyword)
+
+		if err := tpl.ExecuteTemplate(w, "list.html", responseData); err != nil {
+			log.Fatal(err)
+		}
+	} else {
 		http.Redirect(w, r, "/", http.StatusFound)
-	}
-
-	var tpl = template.Must(template.ParseFiles("./template/list.html"))
-
-	// ResponseDataの作成
-	var responseData ResponseData
-	responseData.Keyword = keyword
-	responseData.Books = db.GetSearchedBooks(keyword)
-
-	if err := tpl.ExecuteTemplate(w, "list.html", responseData); err != nil {
-		log.Fatal(err)
 	}
 }
 
