@@ -9,6 +9,11 @@ import (
 	"github.com/gorilla/mux"
 	"strconv"
 )
+type RegistResultValue struct {
+	Title string
+	Author string
+	Latest_Issue float64
+}
 type RegistValue struct {
 	Title string
 	Author string
@@ -51,21 +56,6 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 	if(tmpTitle == ""){
-	// 		errString = append(errString,"タイトルを入力してください")
-			
-	// 	}
-	// 	if(tmpAuthor == ""){
-	// 		errString = append(errString,"著者を入力してください")
-	// 	}
-	// 	if(strConvErr != nil){
-	// 		errString = append(errString,"最新所持巻数を数字で入力してください")
-	// 	}
-	// }
-	// if !((tmpTitle == "") && (tmpAuthor == "") && (strConvErr != nil)){
-		
-	// }
-
 	if strConvErr != nil {
 		tmpLatest_Issue = 1
 	}
@@ -95,7 +85,7 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 
 	if (tmpTitle == "") || (tmpAuthor == "") || (strConvErr != nil) {
 		var url = "/regist"
-		url += "?Title=" + r.Form["Title"][0] + "&Author=" + r.Form["Author"][0] + "&Latest_Issue=" + r.Form["Latest_Issue"][0] + "&ErrCheckFlag=1"
+		url += "?Title=" + tmpTitle + "&Author=" + tmpAuthor + "&Latest_Issue=" + tmpLatest_Issue_String + "&ErrCheckFlag=1"
 		http.Redirect(w,r,url,http.StatusFound)
 	}
 
@@ -106,11 +96,7 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w,r,"/",http.StatusFound)
 	}
 	// テンプレートに埋め込むデータ作成
-	dat := struct {
-		Title string
-		Author string
-		Latest_Issue float64
-	}{
+	dat := RegistResultValue{
 		Title: tmpTitle,
 		Author: tmpAuthor,
 		Latest_Issue: tmpLatest_Issue,
