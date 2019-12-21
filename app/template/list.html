@@ -4,7 +4,6 @@
 	<meta charset="UTF-8">
 	<title>Book List</title>
   <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="css/list.css">
   <style>
     .header {
       height: 60px;
@@ -47,7 +46,7 @@
     <div class="row">
       {{range .Books}}
         <div class="card col-sm-12 col-md-5 col-lg-3 mb-3 mr-1">
-          <img class="card-img-top" src="..." alt="カードの画像">
+          <img class="card-img-top" src="{{.Front_Cover_Image_Path}}" alt="{{.Title}}">
           <div class="card-body">
             <h5 class="card-title">{{.Title}}</h5>
             <p class="card-text">
