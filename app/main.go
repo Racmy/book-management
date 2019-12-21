@@ -9,6 +9,14 @@ import (
 	"github.com/gorilla/mux"
 	"strconv"
 )
+
+const(
+	ROOT string = "/"
+	TITLE string = "Title"
+	AUTHOR string = "Author"
+	LATEST_ISSUE string = "Latest_Issue"
+)
+
 type RegistResultValue struct {
 	Title string
 	Author string
@@ -37,9 +45,9 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	
 
 	errString := []string{}
-	tmpTitle := r.FormValue("Title")
-	tmpAuthor := r.FormValue("Author")
-	tmpLatest_Issue_String := r.FormValue("Latest_Issue")
+	tmpTitle := r.FormValue(TITLE)
+	tmpAuthor := r.FormValue(AUTHOR)
+	tmpLatest_Issue_String := r.FormValue(LATEST_ISSUE)
 	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
 	tmpErrCheckFlag := r.FormValue("ErrCheckFlag")
 
@@ -78,9 +86,9 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegistResult.html"))
 	r.ParseForm()
-	tmpTitle := r.Form["Title"][0]
-	tmpAuthor := r.Form["Author"][0]
-	tmpLatest_Issue_String := r.Form["Latest_Issue"][0]
+	tmpTitle := r.Form[TITLE][0]
+	tmpAuthor := r.Form[AUTHOR][0]
+	tmpLatest_Issue_String := r.Form[LATEST_ISSUE][0]
 	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
 
 	if (tmpTitle == "") || (tmpAuthor == "") || (strConvErr != nil) {
@@ -162,12 +170,12 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	r := mux.NewRouter()
-	r.HandleFunc("/regist", bookRegistHandler)
-	r.HandleFunc("/regist/success", bookInsertHandler)
-	r.HandleFunc("/", homeHandler)
-	r.HandleFunc("/search", bookSearchHandler)
-	r.HandleFunc("/detail", bookDetailHandler)
-	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
-	http.Handle("/", r)
+	r.HandleFunc(ROOT+"regist", bookRegistHandler)
+	r.HandleFunc(ROOT+"regist/success", bookInsertHandler)
+	r.HandleFunc(ROOT, homeHandler)
+	r.HandleFunc(ROOT+"search", bookSearchHandler)
+	r.HandleFunc(ROOT+"detail", bookDetailHandler)
+	http.Handle(ROOT+"node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
+	http.Handle(ROOT, r)
 	http.ListenAndServe(":3000", nil)
 }
