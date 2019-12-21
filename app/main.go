@@ -29,16 +29,19 @@ type ResponseData struct {
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
 	
+	
+
 	errString := []string{}
 	tmpTitle := r.FormValue("Title")
 	tmpAuthor := r.FormValue("Author")
 	tmpLatest_Issue_String := r.FormValue("Latest_Issue")
 	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
+	tmpErrCheckFlag := r.FormValue("ErrCheckFlag")
 
-	if !((tmpTitle == "") && (tmpAuthor == "") && (strConvErr != nil)){
+	//登録ボタン押下時エラーチェックに引っかかった時のメッセージ作成
+	if(tmpErrCheckFlag == "1"){
 		if(tmpTitle == ""){
-			errString = append(errString,"タイトルを入力してください")
-			
+			errString = append(errString,"タイトルを入力してください")	
 		}
 		if(tmpAuthor == ""){
 			errString = append(errString,"著者を入力してください")
@@ -47,6 +50,21 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 			errString = append(errString,"最新所持巻数を数字で入力してください")
 		}
 	}
+
+	// 	if(tmpTitle == ""){
+	// 		errString = append(errString,"タイトルを入力してください")
+			
+	// 	}
+	// 	if(tmpAuthor == ""){
+	// 		errString = append(errString,"著者を入力してください")
+	// 	}
+	// 	if(strConvErr != nil){
+	// 		errString = append(errString,"最新所持巻数を数字で入力してください")
+	// 	}
+	// }
+	// if !((tmpTitle == "") && (tmpAuthor == "") && (strConvErr != nil)){
+		
+	// }
 
 	if strConvErr != nil {
 		tmpLatest_Issue = 1
@@ -77,7 +95,7 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 
 	if (tmpTitle == "") || (tmpAuthor == "") || (strConvErr != nil) {
 		var url = "/regist"
-		url += "?Title=" + r.Form["Title"][0] + "&Author=" + r.Form["Author"][0] + "&Latest_Issue=" + r.Form["Latest_Issue"][0]
+		url += "?Title=" + r.Form["Title"][0] + "&Author=" + r.Form["Author"][0] + "&Latest_Issue=" + r.Form["Latest_Issue"][0] + "&ErrCheckFlag=1"
 		http.Redirect(w,r,url,http.StatusFound)
 	}
 
