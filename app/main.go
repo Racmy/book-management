@@ -11,10 +11,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
+
+const(
+	ROOT string = "/"
+	TITLE string = "Title"
+	AUTHOR string = "Author"
+	LATEST_ISSUE string = "Latest_Issue"
+)
+
+type RegistResultValue struct {
+	Title string
+	Author string
+	Latest_Issue float64
+}
+
 type RegistValue struct {
 	Title        string
 	Author       string
 	Latest_Issue float64
+	ErrString []string
 }
 
 /*
@@ -31,10 +46,25 @@ type ResponseData struct {
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
 
-	tmpTitle := r.FormValue("Title")
-	tmpAuthor := r.FormValue("Author")
-	tmpLatest_Issue_String := r.FormValue("Latest_Issue")
-	tmpLatest_Issue, strConvErr := strconv.ParseFloat(tmpLatest_Issue_String, 64)
+	errString := []string{}
+	tmpTitle := r.FormValue(TITLE)
+	tmpAuthor := r.FormValue(AUTHOR)
+	tmpLatest_Issue_String := r.FormValue(LATEST_ISSUE)
+	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
+	tmpErrCheckFlag := r.FormValue("ErrCheckFlag")
+
+	//登録ボタン押下時エラーチェックに引っかかった時のメッセージ作成
+	if(tmpErrCheckFlag == "1"){
+		if(tmpTitle == ""){
+			errString = append(errString,"タイトルを入力してください")	
+		}
+		if(tmpAuthor == ""){
+			errString = append(errString,"著者を入力してください")
+		}
+		if(strConvErr != nil){
+			errString = append(errString,"最新所持巻数を数字で入力してください")
+		}
+	}
 
 	if strConvErr != nil {
 		tmpLatest_Issue = 1
@@ -44,29 +74,30 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 		Title:        tmpTitle,
 		Author:       tmpAuthor,
 		Latest_Issue: tmpLatest_Issue,
+		ErrString: errString,
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "bookRegist.html", tmp); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 /*
-	本を登録画面へのハンドラ
+	本を登録完了画面へのハンドラ
 */
 func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegistResult.html"))
 	r.ParseForm()
-	tmpTitle := r.Form["Title"][0]
-	tmpAuthor := r.Form["Author"][0]
-	tmpLatest_Issue_String := r.Form["Latest_Issue"][0]
-	tmpLatest_Issue, strConvErr := strconv.ParseFloat(tmpLatest_Issue_String, 64)
+
+	tmpTitle := r.Form[TITLE][0]
+	tmpAuthor := r.Form[AUTHOR][0]
+	tmpLatest_Issue_String := r.Form[LATEST_ISSUE][0]
+	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
 
 	if (tmpTitle == "") || (tmpAuthor == "") || (strConvErr != nil) {
 		var url = "/regist"
-		url += "?Title=" + r.Form["Title"][0] + "&Author=" + r.Form["Author"][0] + "&Latest_Issue=" + r.Form["Latest_Issue"][0]
-		http.Redirect(w, r, url, http.StatusFound)
+		url += "?Title=" + tmpTitle + "&Author=" + tmpAuthor + "&Latest_Issue=" + tmpLatest_Issue_String + "&ErrCheckFlag=1"
+		http.Redirect(w,r,url,http.StatusFound)
 	}
 
 	insertBook := db.Book{Title: tmpTitle, Author: tmpAuthor, Latest_Issue: tmpLatest_Issue}
@@ -76,13 +107,9 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
 	// テンプレートに埋め込むデータ作成
-	dat := struct {
-		Title        string
-		Author       string
-		Latest_Issue float64
-	}{
-		Title:        tmpTitle,
-		Author:       tmpAuthor,
+	dat := RegistResultValue{
+		Title: tmpTitle,
+		Author: tmpAuthor,
 		Latest_Issue: tmpLatest_Issue,
 	}
 
@@ -147,12 +174,12 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	r := mux.NewRouter()
-	r.HandleFunc("/regist", bookRegistHandler)
-	r.HandleFunc("/regist/success", bookInsertHandler)
-	r.HandleFunc("/", homeHandler)
-	r.HandleFunc("/search", bookSearchHandler)
-	r.HandleFunc("/detail", bookDetailHandler)
-	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
-	http.Handle("/", r)
+	r.HandleFunc(ROOT+"regist", bookRegistHandler)
+	r.HandleFunc(ROOT+"regist/success", bookInsertHandler)
+	r.HandleFunc(ROOT, homeHandler)
+	r.HandleFunc(ROOT+"search", bookSearchHandler)
+	r.HandleFunc(ROOT+"detail", bookDetailHandler)
+	http.Handle(ROOT+"node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
+	http.Handle(ROOT, r)
 	http.ListenAndServe(":3000", nil)
 }

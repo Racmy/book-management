@@ -20,12 +20,22 @@ func errCheck(err error) {
 	}
 }
 
+/*
+	DBの初期化
+	input: 
+	output:*sql.DB
+*/
 func dbSetUp() *sql.DB {
 	db, err := sql.Open("mysql", "racmy:racmy@tcp(db:3306)/book-management")
 	errCheck(err)
 	return db
 }
 
+/*
+	DB内のすべての本を取得
+	input:
+	output:[]Book
+*/
 func GetAllBooks() []Book {
 	db := dbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
@@ -42,7 +52,13 @@ func GetAllBooks() []Book {
 	return books
 }
 
-func InsertBook(book Book) error {
+
+/*
+	本を1冊DBに挿入する
+	input:Book
+	output:error
+*/
+func InsertBook(book Book) error{
 	db := dbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
 
@@ -54,6 +70,11 @@ func InsertBook(book Book) error {
 	return err
 }
 
+/*
+	本をキーワードで検索する
+	input:keyword string
+	output:[]Book
+*/
 func GetSearchedBooks(keyword string) []Book {
 	keyword = "%" + keyword + "%"
 	db := dbSetUp()
