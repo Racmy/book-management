@@ -13,6 +13,7 @@ type RegistValue struct {
 	Title string
 	Author string
 	Latest_Issue float64
+	ErrString []string
 }
 /*
 	レスポンスデータ
@@ -28,10 +29,24 @@ type ResponseData struct {
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
 	
+	errString := []string{}
 	tmpTitle := r.FormValue("Title")
 	tmpAuthor := r.FormValue("Author")
 	tmpLatest_Issue_String := r.FormValue("Latest_Issue")
 	tmpLatest_Issue , strConvErr := strconv.ParseFloat(tmpLatest_Issue_String,64)
+
+	if !((tmpTitle == "") && (tmpAuthor == "") && (strConvErr != nil)){
+		if(tmpTitle == ""){
+			errString = append(errString,"タイトルを入力してください")
+			
+		}
+		if(tmpAuthor == ""){
+			errString = append(errString,"著者を入力してください")
+		}
+		if(strConvErr != nil){
+			errString = append(errString,"最新所持巻数を数字で入力してください")
+		}
+	}
 
 	if strConvErr != nil {
 		tmpLatest_Issue = 1
@@ -41,6 +56,7 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 		Title: tmpTitle,
 		Author: tmpAuthor,
 		Latest_Issue: tmpLatest_Issue,
+		ErrString: errString,
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "bookRegist.html",tmp); err != nil {
@@ -49,7 +65,7 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 /*
-	本を登録画面へのハンドラ
+	本を登録完了画面へのハンドラ
 */
 func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegistResult.html"))

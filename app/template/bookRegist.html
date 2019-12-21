@@ -4,20 +4,72 @@
 	<meta charset="UTF-8">
 	<title>Book List</title>
   <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/list.css">
+  <style>
+    .header {
+      height: 60px;
+      background-color: rgb(232, 232, 232);
+    }
+    .footer{
+      height: 30px;
+      background-color: rgb(181, 181, 181);
+    }
+  </style>
 </head>
 <body>
-  <header class="sticky-top">
-    <h1>本の登録</h1>
-  </header>
-  <form action = "/regist/success" method="POST">
-    タイトル:<input type="text" name="Title" value="{{.Title}}" >
-    <br>
-    著者　　:<input type="text" name="Author" value="{{.Author}}">
-    <br>
-    所持巻数  ：<input type="tel" name="Latest_Issue" value="{{.Latest_Issue}}">
-    <input type="submit" value="登録">
+  <nav class="navbar navbar-default header mb-3">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">余田本リスト</a>
+      </div>
+    </div>
+  </nav>
+  
+  <form class="form-horizontal" action = "/regist/success" method="POST">
+    <div class="form-group">
+      <label class="col-3 control-label">※タイトル：</label>
+      <div class="col-8">
+        <input class="form-control"　type="text" name="Title" value="{{.Title}}" >
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-3 control-label">※著者：</label>
+      <div class="col-8">
+        <input class="form-control"　type="text" name="Author" value="{{.Author}}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-3 control-label">※所持最新巻数：</label>
+      <div class="col-1">
+        <input class="form-control"　type="tel" name="Latest_Issue" value="{{.Latest_Issue}}">
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="col-offset-8 col-2">
+        <input type="submit" value="登録">
+      </div>
+    </div>
+    
   </form>
-  <form action = "/" method= "GET">
-    <input type="submit" value="戻る">
+  <form class="form-horizontal"　action = "/" method= "GET">
+    <div class="form-group">
+      <div class="col-offset-8 col-2">
+        <input type="submit" value="戻る">
+      </div>
+    </div>
   </form>
+  <ul>
+    {{range .ErrString}}
+      <li>{{.}}</li>
+    {{end}}
+  </ul>
+      
+
+  
+  <!-- フッター -->
+  <footer class="footer fixed-bottom">
+    <div class="container">
+      <p class="text-white m-0">&copy; 2019 Racmy.</p>
+    </div>
+  </footer>
 </body>
