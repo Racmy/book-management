@@ -92,13 +92,15 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 	ルーティング
 */
 func main() {
-
 	r := mux.NewRouter()
 	r.HandleFunc("/book-regist", bookRegistHandler)
 	r.HandleFunc("/", homeHandler)
 	r.HandleFunc("/search", bookSearchHandler)
 	r.HandleFunc("/detail", bookDetailHandler)
+	// cssフレームワーク読み込み
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
+	// 画像フォルダ
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
 	http.Handle("/", r)
 	http.ListenAndServe(":3000", nil)
 }
