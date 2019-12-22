@@ -4,11 +4,13 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
+
 	"github.com/docker_go_nginx/app/db"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
-	"strconv"
 )
+
 
 const(
 	ROOT string = "/"
@@ -22,12 +24,14 @@ type RegistResultValue struct {
 	Author string
 	Latest_Issue float64
 }
+
 type RegistValue struct {
-	Title string
-	Author string
+	Title        string
+	Author       string
 	Latest_Issue float64
 	ErrString []string
 }
+
 /*
 	レスポンスデータ
 */
@@ -41,8 +45,6 @@ type ResponseData struct {
 */
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
-	
-	
 
 	errString := []string{}
 	tmpTitle := r.FormValue(TITLE)
@@ -68,24 +70,25 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 		tmpLatest_Issue = 1
 	}
 
-	tmp := RegistValue {
-		Title: tmpTitle,
-		Author: tmpAuthor,
+	tmp := RegistValue{
+		Title:        tmpTitle,
+		Author:       tmpAuthor,
 		Latest_Issue: tmpLatest_Issue,
 		ErrString: errString,
 	}
 
-	if err := tmpl.ExecuteTemplate(w, "bookRegist.html",tmp); err != nil {
+	if err := tmpl.ExecuteTemplate(w, "bookRegist.html", tmp); err != nil {
 		log.Fatal(err)
 	}
-
 }
+
 /*
 	本を登録完了画面へのハンドラ
 */
 func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegistResult.html"))
 	r.ParseForm()
+
 	tmpTitle := r.Form[TITLE][0]
 	tmpAuthor := r.Form[AUTHOR][0]
 	tmpLatest_Issue_String := r.Form[LATEST_ISSUE][0]
@@ -97,11 +100,11 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w,r,url,http.StatusFound)
 	}
 
-	insertBook := db.Book{Title: tmpTitle,Author: tmpAuthor,Latest_Issue: tmpLatest_Issue}
-	
+	insertBook := db.Book{Title: tmpTitle, Author: tmpAuthor, Latest_Issue: tmpLatest_Issue}
+
 	dbErr := db.InsertBook(insertBook)
-	if  (dbErr != nil) {
-		http.Redirect(w,r,"/",http.StatusFound)
+	if dbErr != nil {
+		http.Redirect(w, r, "/", http.StatusFound)
 	}
 	// テンプレートに埋め込むデータ作成
 	dat := RegistResultValue{
@@ -116,6 +119,7 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
 /*
 	ホーム画面へのハンドラ
 */
