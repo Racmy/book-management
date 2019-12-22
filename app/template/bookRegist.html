@@ -20,7 +20,7 @@
   <nav class="navbar navbar-default header mb-3">
     <div class="container-fluid">
       <div class="navbar-header">
-        <a class="navbar-brand" href="#">余田本リスト</a>
+        <a class="navbar-brand" href="/">余田本リスト</a>
       </div>
     </div>
   </nav>
@@ -46,18 +46,14 @@
     </div>
     <div class="form-group">
       <div class="col-offset-8 col-2">
-        <input type="submit" value="登録">
+        <button class="btn btn-primary text-white" type="submit">登録</button>
       </div>
     </div>
     
   </form>
-  <form class="form-horizontal"　action = "/" method= "GET">
-    <div class="form-group">
-      <div class="col-offset-8 col-2">
-        <input type="submit" value="戻る">
-      </div>
-    </div>
-  </form>
+  <div class="text-right">
+    <a class="btn btn-primary text-white" href="/">本棚へ戻る</a>  
+  </div> 
   <ul>
     {{range .ErrString}}
       <li>{{.}}</li>
