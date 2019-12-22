@@ -22,13 +22,30 @@ func errCheck(err error) {
 
 /*
 	DBの初期化
-	input: 
+	input:
 	output:*sql.DB
 */
 func dbSetUp() *sql.DB {
 	db, err := sql.Open("mysql", "racmy:racmy@tcp(db:3306)/book-management")
 	errCheck(err)
 	return db
+}
+
+/*
+	BookテーブルのIDに紐つく情報を1件取得
+	@param id string
+	@return book Book
+*/
+func GetBookById(id string) Book {
+	db := dbSetUp()
+	defer db.Close()
+	rows, err := db.Query("SELECT * FROM book WHERE Id = ?", id)
+	var book Book
+	if rows.Next() {
+		err = rows.Scan(&book.Id, &book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
+		errCheck(err)
+	}
+	return book
 }
 
 /*
@@ -52,13 +69,12 @@ func GetAllBooks() []Book {
 	return books
 }
 
-
 /*
 	本を1冊DBに挿入する
 	input:Book
 	output:error
 */
-func InsertBook(book Book) error{
+func InsertBook(book Book) error {
 	db := dbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
 

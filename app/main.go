@@ -32,7 +32,14 @@ type RegistValue struct {
 }
 
 /*
-	レスポンスデータ
+	本詳細画面用のレスポンデータ
+*/
+type ResponseDataForDetail struct {
+	Book db.Book
+}
+
+/*
+	一覧画面用のレスポンスデータ
 */
 type ResponseData struct {
 	Keyword string
@@ -136,6 +143,19 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	本詳細画面へのハンドラ
 */
 func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
+
+	query := r.URL.Query()
+
+	if id := query.Get("Id"); query.Get("Id") != "" {
+		// 画面からIdを取得し、DBから紐つくデータを取得
+		var responseData ResponseDataForDetail
+		responseData.Book = db.GetBookById(id)
+		var tpl = template.Must(template.ParseFiles("./template/detail.html"))
+		if err := tpl.ExecuteTemplate(w, "detail.html", responseData.Book); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -168,6 +188,24 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
+	本情報を更新するHandler
+*/
+func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	title := r.Form[TITLE][0]
+	author := r.Form[AUTHOR][0]
+	latest_Issue_String := r.Form[LATEST_ISSUE][0]
+	latest_Issue, strConvErr := strconv.ParseFloat(tmpLatest_Issue_String, 64)
+
+	/*エラーチェック【相談】登録との共通化*/
+	if (title == "") || (author == "") || (strConvErr != nil) {
+		var url = "/detail"
+		url += "?Title=" + tmpTitle + "&Author=" + tmpAuthor + "&Latest_Issue=" + tmpLatest_Issue_String + "&ErrCheckFlag=1"
+		http.Redirect(w, r, url, http.StatusFound)
+	}
+
+}
+
+/*
 	ルーティング
 */
 func main() {
@@ -178,6 +216,7 @@ func main() {
 	r.HandleFunc(ROOT, homeHandler)
 	r.HandleFunc(ROOT+"search", bookSearchHandler)
 	r.HandleFunc(ROOT+"detail", bookDetailHandler)
+	r.HandleFunc(ROOT+"update", bookUpdateHandler)
 	// cssフレームワーク読み込み
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	// 画像フォルダ
