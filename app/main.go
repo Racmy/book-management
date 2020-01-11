@@ -19,7 +19,7 @@ const (
 	AUTHOR       string = "Author"
 	LATEST_ISSUE string = "Latest_Issue"
 	FRONT_COVER_IMAGE string = "Front_Cover_Image"
-	IMG_PATH string = "static/img/"
+	IMG_PATH string = "/static/img/"
 )
 
 type RegistResultValue struct {
@@ -128,6 +128,7 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 		}
 		log.Println(size)
+		tmpFront_Cover_Image_Path = "/" + tmpFront_Cover_Image_Path
 	}
 	
 
@@ -144,9 +145,6 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, url, http.StatusFound)
 	}
 
-	if(tmpFront_Cover_Image_Path != ""){
-		tmpFront_Cover_Image_Path = "/" + tmpFront_Cover_Image_Path
-	}
 	insertBook := db.Book{
 		Title: tmpTitle,
 		Author: tmpAuthor,
