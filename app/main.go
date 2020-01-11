@@ -168,6 +168,8 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		frontCoverImagePath = "/" + frontCoverImagePath
 	}
 
+	log.Println(frontCoverImagePath)
+
 	r.ParseForm()
 
 	title := r.Form[TITLE][0]
@@ -188,13 +190,13 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		FrontCoverImagePath: frontCoverImagePath,
 	}
 
-	dbErr := db.InsertBook(insertBook)
+	id, dbErr := db.InsertBook(insertBook)
 	if dbErr != nil {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
 
 	// テンプレートにデータを埋め込む
-	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", insertBook); err != nil {
+	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", db.GetBookByID(strconv.FormatInt(id, 10))); err != nil {
 		log.Fatal(err)
 	}
 
