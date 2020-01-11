@@ -134,12 +134,12 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	//33554432 約30MByte(8Kのping形式には耐えられない)
 	err := r.ParseMultipartForm(32 << 20)
 	if err != nil {
-		log.Println("not ParseMultipartForm")
+		log.Println("【main.go bookInsertHandler】not ParseMultipartForm")
 		fileUploadFlag = false
 	} else {
 		file, fileHeader, err = r.FormFile(FrontCoverImageName)
 		if err != nil {
-			log.Println("not file upload")
+			log.Println("【main.go bookInsertHandler】not file upload")
 			fileUploadFlag = false
 		}
 	}
@@ -154,7 +154,7 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		var saveImage *os.File
 		saveImage, err = os.Create(frontCoverImagePath)
 		if err != nil {
-			log.Println("os.Create Error")
+			log.Println("【main.go bookInsertHandler】os.Create Error")
 			log.Println(err)
 			return
 		}
@@ -162,13 +162,12 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		defer file.Close()
 		size, err := io.Copy(saveImage, file)
 		if err != nil {
+			log.Println("【main.go bookInsertHandler】io.Copy Error")
 			log.Println(err)
 		}
-		log.Println(size)
+		log.Println("File Upload データサイズ" + size)
 		frontCoverImagePath = "/" + frontCoverImagePath
 	}
-
-	log.Println(frontCoverImagePath)
 
 	r.ParseForm()
 
