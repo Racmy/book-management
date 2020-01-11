@@ -39,6 +39,7 @@ func GetBookByID(id string) Book {
 	db := dbSetUp()
 	defer db.Close()
 	rows, err := db.Query("SELECT * FROM book WHERE Id = ?", id)
+	defer rows.Close()
 	var book Book
 	if rows.Next() {
 		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
@@ -74,24 +75,24 @@ func GetAllBooks() []Book {
 	input:Book
 	output:error
 */
-func InsertBook(book Book) error {
+func InsertBook(book Book) (int64, error) {
 	db := dbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
-	var err error
-
+	var result sql.Result
 	if book.FrontCoverImagePath == "" {
 		ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue) VALUES(?,?,?)")
 		errCheck(err)
 		// Bookを格納する
-		_, err = ins.Exec(&book.Title, &book.Author, &book.LatestIssue)
+		result, err = ins.Exec(&book.Title, &book.Author, &book.LatestIssue)
 	} else {
 		ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?)")
 		errCheck(err)
 		// Bookを格納する
-		_, err = ins.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
-	}
+		result, err = ins.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 
-	return err
+	}
+	// Insertした結果を返す（id, error）
+	return result.LastInsertId()
 }
 
 // GetSearchedBooks ...
