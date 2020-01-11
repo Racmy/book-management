@@ -6,11 +6,11 @@ import (
 
 // Book D層とP層で本の情報を受け渡す構造体
 type Book struct {
-	Id                     int
-	Title                  string
-	Author                 string
-	Latest_Issue           float64
-	Front_Cover_Image_Path string
+	ID                  int
+	Title               string
+	Author              string
+	LatestIssue         float64
+	FrontCoverImagePath string
 }
 
 func errCheck(err error) {
@@ -30,28 +30,27 @@ func dbSetUp() *sql.DB {
 	return db
 }
 
+//GetBookByID ...BookテーブルのIDに紐つく情報を1件取得
 /*
-	GetBookById
-	BookテーブルのIDに紐つく情報を1件取得
-	@param id string
-	@return book Book
+@param id string
+@return book Book
 */
-func GetBookById(id string) Book {
+func GetBookByID(id string) Book {
 	db := dbSetUp()
 	defer db.Close()
 	rows, err := db.Query("SELECT * FROM book WHERE Id = ?", id)
 	var book Book
 	if rows.Next() {
-		err = rows.Scan(&book.Id, &book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
+		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		errCheck(err)
 	}
 	return book
 }
 
+//GetAllBooks ...DB内のすべての本を取得
 /*
-	DB内のすべての本を取得
-	input:
-	output:[]Book
+input:
+output:[]Book
 */
 func GetAllBooks() []Book {
 	db := dbSetUp()
@@ -62,13 +61,14 @@ func GetAllBooks() []Book {
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err = rows.Scan(&book.Id, &book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
+		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		errCheck(err)
 		books = append(books, book)
 	}
 	return books
 }
 
+//InsertBook ...
 /*
 	本を1冊DBに挿入する
 	input:Book
@@ -79,21 +79,22 @@ func InsertBook(book Book) error {
 	defer db.Close() // 関数がリターンする直前に呼び出される
 	var err error
 
-	if(book.Front_Cover_Image_Path == ""){
+	if book.FrontCoverImagePath == "" {
 		ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue) VALUES(?,?,?)")
 		errCheck(err)
 		// Bookを格納する
-		_, err = ins.Exec(&book.Title, &book.Author, &book.Latest_Issue)
-	}else{
+		_, err = ins.Exec(&book.Title, &book.Author, &book.LatestIssue)
+	} else {
 		ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?)")
 		errCheck(err)
 		// Bookを格納する
-		_, err = ins.Exec(&book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
+		_, err = ins.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 	}
-	
+
 	return err
 }
 
+// GetSearchedBooks ...
 /*
 	本をキーワードで検索する
 	input:keyword string
@@ -109,25 +110,26 @@ func GetSearchedBooks(keyword string) []Book {
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err = rows.Scan(&book.Id, &book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
+		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		errCheck(err)
 		books = append(books, book)
 	}
 	return books
 }
 
+// UpdateBook ...
 /*
 	本の更新
 */
 func UpdateBook(book Book) error {
 	db := dbSetUp()
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM book WHERE id = ?", &book.Id)
+	rows, err := db.Query("SELECT * FROM book WHERE id = ?", &book.ID)
 	errCheck(err)
 	if rows.Next() {
 		upd, err := db.Prepare("UPDATE book SET title = ?, author = ?, latest_issue = ? WHERE id = ?")
 		errCheck(err)
-		_, err = upd.Exec(&book.Title, &book.Author, &book.Latest_Issue, &book.Id)
+		_, err = upd.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.ID)
 	}
 	return err
 }
