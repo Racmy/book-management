@@ -15,9 +15,21 @@ import (
 
 const (
 	ROOT         string = "/"
+	ID           string = "Id"
 	TITLE        string = "Title"
 	AUTHOR       string = "Author"
 	LATEST_ISSUE string = "Latest_Issue"
+	IMGPATH      string = "Front_Cover_Image_Path"
+)
+
+const (
+	ERMSG_TITLE_NULL string = "タイトルを入力してください"
+	ERMSG_AUTH_NULL  string = "著者を入力してください"
+	ERMSG_LI_NULL    string = "最新所持巻数を数字で入力してください"
+)
+
+const (
+	SUCMSG_UPDATE string = "更新が完了しました"
 	FRONT_COVER_IMAGE string = "Front_Cover_Image"
 	IMG_PATH string = "/static/img/"
 )
@@ -36,7 +48,16 @@ type RegistValue struct {
 }
 
 /*
-	レスポンスデータ
+	本詳細画面用のレスポンデータ
+*/
+type ResponseDataForDetail struct {
+	Book   db.Book
+	ErrMsg []string
+	SucMsg []string
+}
+
+/*
+	一覧画面用のレスポンスデータ
 */
 type ResponseData struct {
 	Keyword string
@@ -56,16 +77,15 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	tmpLatest_Issue, strConvErr := strconv.ParseFloat(tmpLatest_Issue_String, 64)
 	tmpErrCheckFlag := r.FormValue("ErrCheckFlag")
 
-	//登録ボタン押下時エラーチェックに引っかかった時のメッセージ作成
 	if tmpErrCheckFlag == "1" {
 		if tmpTitle == "" {
-			errString = append(errString, "タイトルを入力してください")
+			errString = append(errString, ERMSG_TITLE_NULL)
 		}
 		if tmpAuthor == "" {
-			errString = append(errString, "著者を入力してください")
+			errString = append(errString, ERMSG_AUTH_NULL)
 		}
 		if strConvErr != nil {
-			errString = append(errString, "最新所持巻数を数字で入力してください")
+			errString = append(errString, ERMSG_LI_NULL)
 		}
 	}
 
@@ -181,7 +201,25 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	本詳細画面へのハンドラ
 */
 func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/", http.StatusFound)
+
+	query := r.URL.Query()
+
+	if id := query.Get("Id"); query.Get("Id") != "" {
+		// 画面からIdを取得し、DBから紐つくデータを取得
+		var responseData ResponseDataForDetail
+		responseData.Book = db.GetBookById(id)
+		//更新成功時のメッセージを格納
+		if query.Get("sucFlg") != "" {
+			responseData.SucMsg = append(responseData.SucMsg, SUCMSG_UPDATE)
+		}
+		var tpl = template.Must(template.ParseFiles("./template/detail.html"))
+		if err := tpl.ExecuteTemplate(w, "detail.html", responseData); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		http.Redirect(w, r, "/", http.StatusFound)
+	}
+
 }
 
 /*
@@ -194,7 +232,7 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 	if keyword := query.Get("keyword"); query.Get("keyword") != "" {
 		// keywordがnullの場合は、HOMEへリダイレクト
 		if keyword == "" {
-			http.Redirect(w, r, "/", http.StatusFound)
+			http.Redirect(w, r, ROOT, http.StatusFound)
 		}
 
 		var tpl = template.Must(template.ParseFiles("./template/list.html"))
@@ -208,7 +246,54 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 	} else {
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, ROOT, http.StatusFound)
+	}
+}
+
+/*
+	本情報を更新するHandler
+*/
+func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	title := r.FormValue(TITLE)
+	author := r.FormValue(AUTHOR)
+	imgPath := r.FormValue(IMGPATH)
+	id := r.FormValue(ID)
+	id_int, strConvErr := strconv.Atoi(id)
+	latest_Issue_String := r.FormValue(LATEST_ISSUE)
+	latest_Issue, strConvErr := strconv.ParseFloat(latest_Issue_String, 64)
+
+	var url = "/detail"
+	var errMsg []string
+	/*エラーチェック【相談】登録との共通化*/
+	if title == "" {
+		errMsg = append(errMsg, ERMSG_TITLE_NULL)
+	}
+	if author == "" {
+		errMsg = append(errMsg, ERMSG_AUTH_NULL)
+	}
+	if strConvErr != nil {
+		errMsg = append(errMsg, ERMSG_LI_NULL)
+	}
+
+	// 入力エラーがない場合は更新処理を実施
+	if len(errMsg) == 0 {
+		// 入力データで更新
+		updateBook := db.Book{Id: id_int, Title: title, Author: author, Latest_Issue: latest_Issue}
+		db.UpdateBook(updateBook)
+		// 成功したことをDetailに伝えるためにsucFlgをつける
+		url += "?Id=" + id + "&sucFlg=1"
+		http.Redirect(w, r, url, http.StatusFound)
+	} else {
+		var tmpl = template.Must(template.ParseFiles("./template/detail.html"))
+		// エラー時は、画面から送られてきたデータを渡す
+		inputBook := db.Book{Id: id_int, Title: title, Author: author, Latest_Issue: latest_Issue, Front_Cover_Image_Path: imgPath}
+
+		// 画面に表示するデータを格納
+		responseData := ResponseDataForDetail{Book: inputBook, ErrMsg: errMsg}
+
+		if err := tmpl.ExecuteTemplate(w, "detail.html", responseData); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
@@ -223,6 +308,7 @@ func main() {
 	r.HandleFunc(ROOT, homeHandler)
 	r.HandleFunc(ROOT+"search", bookSearchHandler)
 	r.HandleFunc(ROOT+"detail", bookDetailHandler)
+	r.HandleFunc(ROOT+"update", bookUpdateHandler)
 	// cssフレームワーク読み込み
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	// 画像フォルダ

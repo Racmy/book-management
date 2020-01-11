@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Book List</title>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <style>
+        .header {
+            height: 60px;
+            background-color: rgb(232, 232, 232);
+        }
+
+        .footer {
+            height: 30px;
+            background-color: rgb(181, 181, 181);
+        }
+        .thumbnail {
+            height: auto;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- header -->
+    <nav class="navbar navbar-default header mb-3">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">余田本リスト</a>
+            </div>
+            <div class="">
+                <a href="/regist" class="btn btn-primary text-white">本を登録する</a>
+            </div>
+        </div>
+    </nav>
+    <!-- /header -->
+
+    <!-- 本情報表示 -->
+    <form class="form-horizontal" action="/update" method="POST">
+        <img class="img-thumbnail img-fluid mx-auto d-block thumbnail col-sm-6" src="{{.Book.Front_Cover_Image_Path}}">
+        <input name="Id" type="hidden" value="{{.Book.Id}}">
+        <input name="Front_Cover_Image_Path" type="hidden" value="{{.Book.Front_Cover_Image_Path}}">
+
+        {{ if .ErrMsg}}
+            <div class="alert alert-danger" role="alert">
+                <ul>
+                {{range $msg := .ErrMsg}}
+                <li>{{$msg}}</li>
+                {{end}}
+                </ul>
+            </div>
+        {{ end }}
+
+        {{ if .SucMsg}}
+            <div class="alert alert-success" role="alert">
+                <ul>
+                {{range $msg := .SucMsg}}
+                <li>{{$msg}}</li>
+                {{end}}
+                </ul>
+            </div>
+        {{ end }}
+        <div class="form-group">
+            <label class="col-3 control-label">※タイトル：</label>
+            <div class="col-8">
+                <input class="form-control" 　type="text" name="Title" value="{{.Book.Title}}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-3 control-label">※著者：</label>
+            <div class="col-8">
+                <input class="form-control" 　type="text" name="Author" value="{{.Book.Author}}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-3 control-label">※所持最新巻数：</label>
+            <div class="col-1">
+                <input class="form-control" 　type="tel" name="Latest_Issue" value="{{.Book.Latest_Issue}}">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-offset-8 col-2">
+                <input class="btn btn-success" type="submit" value="更新する">
+            </div>
+        </div>
+    </form>
+
+    <form>
+        <a href="/" class="btn btn-secondary">戻る</a>
+        <button class="btn btn-danger" type="submit">削除する</button>
+    </form>
+
+    <!-- フッター -->
+    <footer class="footer fixed-bottom">
+        <div class="container">
+            <p class="text-white m-0">&copy; 2019 Racmy.</p>
+        </div>
+    </footer>
+</body>
