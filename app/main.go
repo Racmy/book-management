@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	ID           string = "Id"
 	ROOT         string = "/"
 	TITLE        string = "Title"
 	AUTHOR       string = "Author"
@@ -168,9 +169,21 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
+	本の削除ハンドラ
+	/detail →　/
+*/
+func deleteBookHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	id := r.FormValue(ID)
+	db.DeleteBookById(id)
+}
+
+/*
 	ルーティング
 */
 func main() {
+
+	log.Print(2 << 2)
 
 	r := mux.NewRouter()
 	r.HandleFunc(ROOT+"regist", bookRegistHandler)

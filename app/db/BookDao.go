@@ -22,7 +22,7 @@ func errCheck(err error) {
 
 /*
 	DBの初期化
-	input: 
+	input:
 	output:*sql.DB
 */
 func dbSetUp() *sql.DB {
@@ -52,13 +52,12 @@ func GetAllBooks() []Book {
 	return books
 }
 
-
 /*
 	本を1冊DBに挿入する
 	input:Book
 	output:error
 */
-func InsertBook(book Book) error{
+func InsertBook(book Book) error {
 	db := dbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
 
@@ -79,15 +78,27 @@ func GetSearchedBooks(keyword string) []Book {
 	keyword = "%" + keyword + "%"
 	db := dbSetUp()
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM book WHERE title LIKE ? OR author LIKE ?", keyword, keyword)
-	errCheck(err)
+	rows, _ := db.Query("SELECT * FROM book WHERE title LIKE ? OR author LIKE ?", keyword, keyword)
+	// errCheck(err)
 	// Bookを格納するArray作成
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err = rows.Scan(&book.Id, &book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
-		errCheck(err)
+		// err = rows.Scan(&book.Id, &book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
+		// errCheck(err)
 		books = append(books, book)
 	}
 	return books
+}
+
+/*
+	本登録情報の削除機能
+	@param id
+	@return err
+*/
+func DeleteBookById(id string) error {
+	db := dbSetUp()
+	defer db.Close()
+	_, err := db.Query("DELETE book WHERE id = ?", id)
+	return err
 }
