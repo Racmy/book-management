@@ -5,7 +5,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-
+	"os"
+	"io"
+	"mime/multipart"
 	"github.com/docker_go_nginx/app/db"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -16,6 +18,8 @@ const (
 	TITLE        string = "Title"
 	AUTHOR       string = "Author"
 	LATEST_ISSUE string = "Latest_Issue"
+	FRONT_COVER_IMAGE string = "Front_Cover_Image"
+	IMG_PATH string = "static/img/"
 )
 
 type RegistResultValue struct {
@@ -86,6 +90,48 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 */
 func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegistResult.html"))
+	
+	//表紙画像がuploadされたかどうかを判定するフラグの初期化
+	fileUploadFlag := true
+	tmpFront_Cover_Image_Path := ""
+	//表紙画像を格納する変数宣言
+	var file multipart.File
+	var fileHeader *multipart.FileHeader
+    // POSTされたファイルデータをメモリに格納
+	err := r.ParseMultipartForm(32 << 20) // maxMemory
+    if err != nil {
+        log.Println("not ParseMultipartForm")
+        fileUploadFlag = false
+    }else{
+		file , fileHeader , err = r.FormFile (FRONT_COVER_IMAGE)
+		// log.Printf("%T", file)
+		if (err != nil) {
+			// format.Fprintln(w, "ファイルアップロードを確認できませんでした。")
+			log.Println("not file upload")
+			fileUploadFlag = false
+		}
+	}
+	//表紙画像がuploadされている時
+	if(fileUploadFlag){
+		tmpFront_Cover_Image_Path = IMG_PATH + fileHeader.Filename
+
+		log.Println(tmpFront_Cover_Image_Path)
+		// サーバー側に保存するために空ファイルを作成
+		var saveImage *os.File
+		saveImage, err = os.Create(tmpFront_Cover_Image_Path)
+		if (err != nil) {
+			log.Println(err)
+		}
+		defer saveImage.Close()
+		defer file.Close()
+		size, err := io.Copy(saveImage, file)
+		if (err != nil) {
+			log.Println(err)
+		}
+		log.Println(size)
+	}
+	
+
 	r.ParseForm()
 
 	tmpTitle := r.Form[TITLE][0]
@@ -99,21 +145,30 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, url, http.StatusFound)
 	}
 
-	insertBook := db.Book{Title: tmpTitle, Author: tmpAuthor, Latest_Issue: tmpLatest_Issue}
+	if(tmpFront_Cover_Image_Path != ""){
+		tmpFront_Cover_Image_Path = "/" + tmpFront_Cover_Image_Path
+	}
+	insertBook := db.Book{
+		Title: tmpTitle,
+		Author: tmpAuthor,
+		Latest_Issue: tmpLatest_Issue,
+		Front_Cover_Image_Path: tmpFront_Cover_Image_Path,
+	}
 
 	dbErr := db.InsertBook(insertBook)
 	if dbErr != nil {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
-	// テンプレートに埋め込むデータ作成
-	dat := RegistResultValue{
-		Title:        tmpTitle,
-		Author:       tmpAuthor,
-		Latest_Issue: tmpLatest_Issue,
-	}
+	// // テンプレートに埋め込むデータ作成
+	// dat := RegistResultValue{
+	// 	Title:        tmpTitle,
+	// 	Author:       tmpAuthor,
+	// 	Latest_Issue: tmpLatest_Issue,
+
+	// }
 
 	// テンプレートにデータを埋め込む
-	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", dat); err != nil {
+	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", insertBook); err != nil {
 		log.Fatal(err)
 	}
 

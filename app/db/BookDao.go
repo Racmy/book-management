@@ -61,12 +61,20 @@ func GetAllBooks() []Book {
 func InsertBook(book Book) error{
 	db := dbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
+	var err error
 
-	ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?)")
-	errCheck(err)
-	// Bookを格納する
-	_, err = ins.Exec(&book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
-
+	if(book.Front_Cover_Image_Path == ""){
+		ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue) VALUES(?,?,?)")
+		errCheck(err)
+		// Bookを格納する
+		_, err = ins.Exec(&book.Title, &book.Author, &book.Latest_Issue)
+	}else{
+		ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?)")
+		errCheck(err)
+		// Bookを格納する
+		_, err = ins.Exec(&book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
+	}
+	
 	return err
 }
 
