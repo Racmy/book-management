@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default header mb-3">
         <div class="container-fluid">
             <div class="navbar-header">
-                <a class="navbar-brand" href="#">余田本リスト</a>
+                <a class="navbar-brand" href="/">余田本リスト</a>
             </div>
             <div class="">
                 <a href="/regist" class="btn btn-primary text-white">本を登録する</a>
@@ -38,23 +38,45 @@
 
     <!-- 本情報表示 -->
     <form class="form-horizontal" action="/update" method="POST">
-        <img class="img-thumbnail img-fluid mx-auto d-block thumbnail col-sm-6" src="{{.Front_Cover_Image_Path}}">
+        <img class="img-thumbnail img-fluid mx-auto d-block thumbnail col-sm-6" src="{{.Book.Front_Cover_Image_Path}}">
+        <input name="Id" type="hidden" value="{{.Book.Id}}">
+        <input name="Front_Cover_Image_Path" type="hidden" value="{{.Book.Front_Cover_Image_Path}}">
+
+        {{ if .ErrMsg}}
+            <div class="alert alert-danger" role="alert">
+                <ul>
+                {{range $msg := .ErrMsg}}
+                <li>{{$msg}}</li>
+                {{end}}
+                </ul>
+            </div>
+        {{ end }}
+
+        {{ if .SucMsg}}
+            <div class="alert alert-success" role="alert">
+                <ul>
+                {{range $msg := .SucMsg}}
+                <li>{{$msg}}</li>
+                {{end}}
+                </ul>
+            </div>
+        {{ end }}
         <div class="form-group">
             <label class="col-3 control-label">※タイトル：</label>
             <div class="col-8">
-                <input class="form-control" 　type="text" name="Title" value="{{.Title}}">
+                <input class="form-control" 　type="text" name="Title" value="{{.Book.Title}}">
             </div>
         </div>
         <div class="form-group">
             <label class="col-3 control-label">※著者：</label>
             <div class="col-8">
-                <input class="form-control" 　type="text" name="Author" value="{{.Author}}">
+                <input class="form-control" 　type="text" name="Author" value="{{.Book.Author}}">
             </div>
         </div>
         <div class="form-group">
             <label class="col-3 control-label">※所持最新巻数：</label>
             <div class="col-1">
-                <input class="form-control" 　type="tel" name="Latest_Issue" value="{{.Latest_Issue}}">
+                <input class="form-control" 　type="tel" name="Latest_Issue" value="{{.Book.Latest_Issue}}">
             </div>
         </div>
         <div class="form-group">

@@ -2,10 +2,9 @@ package db
 
 import (
 	"database/sql"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
+// Book D層とP層で本の情報を受け渡す構造体
 type Book struct {
 	Id                     int
 	Title                  string
@@ -32,6 +31,7 @@ func dbSetUp() *sql.DB {
 }
 
 /*
+	GetBookById
 	BookテーブルのIDに紐つく情報を1件取得
 	@param id string
 	@return book Book
@@ -78,10 +78,10 @@ func InsertBook(book Book) error {
 	db := dbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
 
-	ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?)")
+	ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue) VALUES(?,?,?)")
 	errCheck(err)
 	// Bookを格納する
-	_, err = ins.Exec(&book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
+	_, err = ins.Exec(&book.Title, &book.Author, &book.Latest_Issue)
 
 	return err
 }
@@ -106,4 +106,20 @@ func GetSearchedBooks(keyword string) []Book {
 		books = append(books, book)
 	}
 	return books
+}
+
+/*
+	本の更新
+*/
+func UpdateBook(book Book) error {
+	db := dbSetUp()
+	defer db.Close()
+	rows, err := db.Query("SELECT * FROM book WHERE id = ?", &book.Id)
+	errCheck(err)
+	if rows.Next() {
+		upd, err := db.Prepare("UPDATE book SET title = ?, author = ?, latest_issue = ? WHERE id = ?")
+		errCheck(err)
+		_, err = upd.Exec(&book.Title, &book.Author, &book.Latest_Issue, &book.Id)
+	}
+	return err
 }
