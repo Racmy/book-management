@@ -2,66 +2,79 @@ package main
 
 import (
 	"html/template"
-	"log"
-	"net/http"
-	"strconv"
-	"os"
 	"io"
+	"log"
 	"mime/multipart"
+	"net/http"
+	"os"
+	"strconv"
+
 	"github.com/docker_go_nginx/app/db"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
 
+/**
+【Book構造体用の定数】
+ROOT ・・・ドキュメントルート
+ID・・・本のID
+TITLE・・・本のタイトル
+AUTHOR・・・本の著者
+LatestIssue・・・所持巻数
+IMGPATH・・・画像へのパス
+*/
 const (
-	ROOT         string = "/"
-	ID           string = "Id"
-	TITLE        string = "Title"
-	AUTHOR       string = "Author"
-	LATEST_ISSUE string = "Latest_Issue"
-	IMGPATH      string = "Front_Cover_Image_Path"
+	ID          string = "Id"
+	TITLE       string = "Title"
+	AUTHOR      string = "Author"
+	LatestIssue string = "LatestIssue"
+	IMGPATH     string = "FrontCoverImagePath"
 )
-
-const (
-	ERMSG_TITLE_NULL string = "タイトルを入力してください"
-	ERMSG_AUTH_NULL  string = "著者を入力してください"
-	ERMSG_LI_NULL    string = "最新所持巻数を数字で入力してください"
-)
-
-const (
-	SUCMSG_UPDATE string = "更新が完了しました"
-	FRONT_COVER_IMAGE string = "Front_Cover_Image"
-	IMG_PATH string = "/static/img/"
-)
-
-type RegistResultValue struct {
-	Title        string
-	Author       string
-	Latest_Issue float64
-}
-
-type RegistValue struct {
-	Title        string
-	Author       string
-	Latest_Issue float64
-	ErrString    []string
-}
 
 /*
-	本詳細画面用のレスポンデータ
+【エラーメッセージの文言】
 */
+const (
+	ErrMsgTitleNull string = "タイトルを入力してください"
+	ErrMsgAuthNull  string = "著者を入力してください"
+	ErrMsgLiNull    string = "最新所持巻数を数字で入力してください"
+)
+
+/*
+【成功時のメッセージ文言】
+*/
+const (
+	SucMsgUpdate        string = "更新が完了しました"
+	FrontCoverImageName string = "FrontCoverImageName"
+)
+
+/*
+【パス関係の定数】
+*/
+const (
+	ROOT    string = "/"
+	ImgPath string = "/static/img/"
+)
+
+//ResponseDataForDetail ...　本詳細画面用の構造体
 type ResponseDataForDetail struct {
 	Book   db.Book
 	ErrMsg []string
 	SucMsg []string
 }
 
-/*
-	一覧画面用のレスポンスデータ
-*/
+// ResponseData ...　一覧画面用のレスポンスデータ
 type ResponseData struct {
 	Keyword string
 	Books   []db.Book
+}
+
+// RegistValue ...登録用の構造体
+type RegistValue struct {
+	Title       string
+	Author      string
+	LatestIssue float64
+	ErrString   []string
 }
 
 /*
@@ -71,33 +84,33 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
 
 	errString := []string{}
-	tmpTitle := r.FormValue(TITLE)
-	tmpAuthor := r.FormValue(AUTHOR)
-	tmpLatest_Issue_String := r.FormValue(LATEST_ISSUE)
-	tmpLatest_Issue, strConvErr := strconv.ParseFloat(tmpLatest_Issue_String, 64)
+	title := r.FormValue(TITLE)
+	author := r.FormValue(AUTHOR)
+	latestIssueString := r.FormValue(LatestIssue)
+	latestIssue, strConvErr := strconv.ParseFloat(latestIssueString, 64)
 	tmpErrCheckFlag := r.FormValue("ErrCheckFlag")
 
 	if tmpErrCheckFlag == "1" {
-		if tmpTitle == "" {
-			errString = append(errString, ERMSG_TITLE_NULL)
+		if title == "" {
+			errString = append(errString, ErrMsgTitleNull)
 		}
-		if tmpAuthor == "" {
-			errString = append(errString, ERMSG_AUTH_NULL)
+		if author == "" {
+			errString = append(errString, ErrMsgAuthNull)
 		}
 		if strConvErr != nil {
-			errString = append(errString, ERMSG_LI_NULL)
+			errString = append(errString, ErrMsgLiNull)
 		}
 	}
 
 	if strConvErr != nil {
-		tmpLatest_Issue = 1
+		latestIssue = 1
 	}
 
 	tmp := RegistValue{
-		Title:        tmpTitle,
-		Author:       tmpAuthor,
-		Latest_Issue: tmpLatest_Issue,
-		ErrString:    errString,
+		Title:       title,
+		Author:      author,
+		LatestIssue: latestIssue,
+		ErrString:   errString,
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "bookRegist.html", tmp); err != nil {
@@ -110,73 +123,76 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 */
 func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegistResult.html"))
-	
+
 	//表紙画像がuploadされたかどうかを判定するフラグの初期化
 	fileUploadFlag := true
-	tmpFront_Cover_Image_Path := ""
+	frontCoverImagePath := ""
 	//表紙画像を格納する変数宣言
 	var file multipart.File
 	var fileHeader *multipart.FileHeader
 	// POSTされたファイルデータをメモリに格納
 	//33554432 約30MByte(8Kのping形式には耐えられない)
-	err := r.ParseMultipartForm(32 << 20) 
-    if err != nil {
-        log.Println("not ParseMultipartForm")
-        fileUploadFlag = false
-    }else{
-		file , fileHeader , err = r.FormFile (FRONT_COVER_IMAGE)
-		if (err != nil) {
+	err := r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		log.Println("not ParseMultipartForm")
+		fileUploadFlag = false
+	} else {
+		file, fileHeader, err = r.FormFile(FrontCoverImageName)
+		if err != nil {
 			log.Println("not file upload")
 			fileUploadFlag = false
 		}
 	}
 	//表紙画像がuploadされている時
-	if(fileUploadFlag){
-		tmpFront_Cover_Image_Path = IMG_PATH + fileHeader.Filename
+	if fileUploadFlag {
+		//【TODO】余田へ
+		// Filerクラスを作成する際に、static/img/（相対パス）を絶対パスでできるようにしてください。
+		frontCoverImagePath = "static/img/" + fileHeader.Filename
 
-		log.Println(tmpFront_Cover_Image_Path)
+		log.Println(frontCoverImagePath)
 		// サーバー側に保存するために空ファイルを作成
 		var saveImage *os.File
-		saveImage, err = os.Create(tmpFront_Cover_Image_Path)
-		if (err != nil) {
+		saveImage, err = os.Create(frontCoverImagePath)
+		if err != nil {
+			log.Println("os.Create Error")
 			log.Println(err)
+			return
 		}
 		defer saveImage.Close()
 		defer file.Close()
 		size, err := io.Copy(saveImage, file)
-		if (err != nil) {
+		if err != nil {
 			log.Println(err)
 		}
 		log.Println(size)
-		tmpFront_Cover_Image_Path = "/" + tmpFront_Cover_Image_Path
+		frontCoverImagePath = "/" + frontCoverImagePath
 	}
-	
 
 	r.ParseForm()
 
-	tmpTitle := r.Form[TITLE][0]
-	tmpAuthor := r.Form[AUTHOR][0]
-	tmpLatest_Issue_String := r.Form[LATEST_ISSUE][0]
-	tmpLatest_Issue, strConvErr := strconv.ParseFloat(tmpLatest_Issue_String, 64)
+	title := r.Form[TITLE][0]
+	author := r.Form[AUTHOR][0]
+	latestIssueString := r.Form[LatestIssue][0]
+	latestIssue, strConvErr := strconv.ParseFloat(latestIssueString, 64)
 
-	if (tmpTitle == "") || (tmpAuthor == "") || (strConvErr != nil) {
+	if (title == "") || (author == "") || (strConvErr != nil) {
 		var url = "/regist"
-		url += "?Title=" + tmpTitle + "&Author=" + tmpAuthor + "&Latest_Issue=" + tmpLatest_Issue_String + "&ErrCheckFlag=1"
+		url += "?Title=" + title + "&Author=" + author + "&LatestIssue=" + latestIssueString + "&ErrCheckFlag=1"
 		http.Redirect(w, r, url, http.StatusFound)
 	}
 
 	insertBook := db.Book{
-		Title: tmpTitle,
-		Author: tmpAuthor,
-		Latest_Issue: tmpLatest_Issue,
-		Front_Cover_Image_Path: tmpFront_Cover_Image_Path,
+		Title:               title,
+		Author:              author,
+		LatestIssue:         latestIssue,
+		FrontCoverImagePath: frontCoverImagePath,
 	}
 
 	dbErr := db.InsertBook(insertBook)
 	if dbErr != nil {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
-	
+
 	// テンプレートにデータを埋め込む
 	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", insertBook); err != nil {
 		log.Fatal(err)
@@ -207,10 +223,10 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if id := query.Get("Id"); query.Get("Id") != "" {
 		// 画面からIdを取得し、DBから紐つくデータを取得
 		var responseData ResponseDataForDetail
-		responseData.Book = db.GetBookById(id)
+		responseData.Book = db.GetBookByID(id)
 		//更新成功時のメッセージを格納
 		if query.Get("sucFlg") != "" {
-			responseData.SucMsg = append(responseData.SucMsg, SUCMSG_UPDATE)
+			responseData.SucMsg = append(responseData.SucMsg, SucMsgUpdate)
 		}
 		var tpl = template.Must(template.ParseFiles("./template/detail.html"))
 		if err := tpl.ExecuteTemplate(w, "detail.html", responseData); err != nil {
@@ -258,27 +274,27 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	author := r.FormValue(AUTHOR)
 	imgPath := r.FormValue(IMGPATH)
 	id := r.FormValue(ID)
-	id_int, strConvErr := strconv.Atoi(id)
-	latest_Issue_String := r.FormValue(LATEST_ISSUE)
-	latest_Issue, strConvErr := strconv.ParseFloat(latest_Issue_String, 64)
+	idInt, strConvErr := strconv.Atoi(id)
+	latestIssueString := r.FormValue(LatestIssue)
+	latestIssue, strConvErr := strconv.ParseFloat(latestIssueString, 64)
 
 	var url = "/detail"
 	var errMsg []string
 	/*エラーチェック【相談】登録との共通化*/
 	if title == "" {
-		errMsg = append(errMsg, ERMSG_TITLE_NULL)
+		errMsg = append(errMsg, ErrMsgTitleNull)
 	}
 	if author == "" {
-		errMsg = append(errMsg, ERMSG_AUTH_NULL)
+		errMsg = append(errMsg, ErrMsgAuthNull)
 	}
 	if strConvErr != nil {
-		errMsg = append(errMsg, ERMSG_LI_NULL)
+		errMsg = append(errMsg, ErrMsgLiNull)
 	}
 
 	// 入力エラーがない場合は更新処理を実施
 	if len(errMsg) == 0 {
 		// 入力データで更新
-		updateBook := db.Book{Id: id_int, Title: title, Author: author, Latest_Issue: latest_Issue}
+		updateBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue}
 		db.UpdateBook(updateBook)
 		// 成功したことをDetailに伝えるためにsucFlgをつける
 		url += "?Id=" + id + "&sucFlg=1"
@@ -286,7 +302,7 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		var tmpl = template.Must(template.ParseFiles("./template/detail.html"))
 		// エラー時は、画面から送られてきたデータを渡す
-		inputBook := db.Book{Id: id_int, Title: title, Author: author, Latest_Issue: latest_Issue, Front_Cover_Image_Path: imgPath}
+		inputBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue, FrontCoverImagePath: imgPath}
 
 		// 画面に表示するデータを格納
 		responseData := ResponseDataForDetail{Book: inputBook, ErrMsg: errMsg}
