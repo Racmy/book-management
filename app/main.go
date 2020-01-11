@@ -97,16 +97,15 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	//表紙画像を格納する変数宣言
 	var file multipart.File
 	var fileHeader *multipart.FileHeader
-    // POSTされたファイルデータをメモリに格納
-	err := r.ParseMultipartForm(32 << 20) // maxMemory
+	// POSTされたファイルデータをメモリに格納
+	//33554432 約30MByte(8Kのping形式には耐えられない)
+	err := r.ParseMultipartForm(32 << 20) 
     if err != nil {
         log.Println("not ParseMultipartForm")
         fileUploadFlag = false
     }else{
 		file , fileHeader , err = r.FormFile (FRONT_COVER_IMAGE)
-		// log.Printf("%T", file)
 		if (err != nil) {
-			// format.Fprintln(w, "ファイルアップロードを確認できませんでした。")
 			log.Println("not file upload")
 			fileUploadFlag = false
 		}
@@ -159,14 +158,7 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	if dbErr != nil {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
-	// // テンプレートに埋め込むデータ作成
-	// dat := RegistResultValue{
-	// 	Title:        tmpTitle,
-	// 	Author:       tmpAuthor,
-	// 	Latest_Issue: tmpLatest_Issue,
-
-	// }
-
+	
 	// テンプレートにデータを埋め込む
 	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", insertBook); err != nil {
 		log.Fatal(err)
