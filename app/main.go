@@ -38,6 +38,7 @@ const (
 	ErrMsgTitleNull string = "タイトルを入力してください"
 	ErrMsgAuthNull  string = "著者を入力してください"
 	ErrMsgLiNull    string = "最新所持巻数を数字で入力してください"
+	ErrMsgServerErr string = "現在不安定な状態です。再度、お試しください。"
 )
 
 /*
@@ -165,7 +166,8 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("【main.go bookInsertHandler】io.Copy Error")
 			log.Println(err)
 		}
-		log.Println("File Upload データサイズ" + size)
+		log.Print("File Upload データサイズ")
+		log.Println(size)
 		frontCoverImagePath = "/" + frontCoverImagePath
 	}
 
@@ -189,13 +191,22 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		FrontCoverImagePath: frontCoverImagePath,
 	}
 
-	id, dbErr := db.InsertBook(insertBook)
-	if dbErr != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+	// 入力チェック後の本データを登録
+	id, insErr := db.InsertBook(insertBook)
+	//　本の登録失敗時には、ホーム画面へ遷移
+	if insErr != nil {
+		http.Redirect(w, r, ROOT, http.StatusFound)
+	}
+
+	// 登録した際に発行されるIDで本情報をDBから取得
+	book, canGet := db.GetBookByID(strconv.FormatInt(id, 10))
+	// 取得失敗時は、ホーム画面へ遷移
+	if canGet == false {
+		http.Redirect(w, r, ROOT, http.StatusFound)
 	}
 
 	// テンプレートにデータを埋め込む
-	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", db.GetBookByID(strconv.FormatInt(id, 10))); err != nil {
+	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", book); err != nil {
 		log.Fatal(err)
 	}
 
@@ -224,7 +235,13 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if id := query.Get("Id"); query.Get("Id") != "" {
 		// 画面からIdを取得し、DBから紐つくデータを取得
 		var responseData ResponseDataForDetail
-		responseData.Book = db.GetBookByID(id)
+		var canGet bool
+		responseData.Book, canGet = db.GetBookByID(id)
+		// データ取得失敗時はホームへ戻す
+		if canGet == false {
+			http.Redirect(w, r, ROOT, http.StatusFound)
+		}
+
 		//更新成功時のメッセージを格納
 		if query.Get("sucFlg") != "" {
 			responseData.SucMsg = append(responseData.SucMsg, SucMsgUpdate)
@@ -279,7 +296,6 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	latestIssueString := r.FormValue(LatestIssue)
 	latestIssue, strConvErr := strconv.ParseFloat(latestIssueString, 64)
 
-	var url = "/detail"
 	var errMsg []string
 	/*エラーチェック【相談】登録との共通化*/
 	if title == "" {
@@ -296,22 +312,37 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if len(errMsg) == 0 {
 		// 入力データで更新
 		updateBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue}
-		db.UpdateBook(updateBook)
-		// 成功したことをDetailに伝えるためにsucFlgをつける
-		url += "?Id=" + id + "&sucFlg=1"
-		http.Redirect(w, r, url, http.StatusFound)
-	} else {
-		var tmpl = template.Must(template.ParseFiles("./template/detail.html"))
-		// エラー時は、画面から送られてきたデータを渡す
-		inputBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue, FrontCoverImagePath: imgPath}
+		id := db.UpdateBook(updateBook)
 
-		// 画面に表示するデータを格納
-		responseData := ResponseDataForDetail{Book: inputBook, ErrMsg: errMsg}
+		idString := strconv.Itoa(id)
 
-		if err := tmpl.ExecuteTemplate(w, "detail.html", responseData); err != nil {
-			log.Fatal(err)
+		// 更新処理が失敗していない場合は、詳細画面へ遷移（detail.html）
+		var url string
+		if id != -1 {
+			log.Print("【main.go　UpdateBookHander】success update")
+			// 成功したことをDetailに伝えるためにsucFlgをつける
+			url = "/detail" + "?Id=" + idString + "&sucFlg=1"
+			http.Redirect(w, r, url, http.StatusFound)
+		} else {
+			// 更新に失敗したことを、エラーメッセージにつめる
+			errMsg = append(errMsg, ErrMsgServerErr)
 		}
 	}
+
+	// 以下、入力ミス・更新失敗時の処理
+	log.Print("【main.go　UpdateBookHander】invalid input value or fail update")
+
+	var tmpl = template.Must(template.ParseFiles("./template/detail.html"))
+	// エラー時は、画面から送られてきたデータを渡す
+	inputBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue, FrontCoverImagePath: imgPath}
+
+	// 画面に表示するデータを格納
+	responseData := ResponseDataForDetail{Book: inputBook, ErrMsg: errMsg}
+
+	if err := tmpl.ExecuteTemplate(w, "detail.html", responseData); err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 /*

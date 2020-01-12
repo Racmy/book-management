@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"strconv"
 )
 
 // Book D層とP層で本の情報を受け渡す構造体
@@ -34,18 +35,28 @@ func dbSetUp() *sql.DB {
 /*
 @param id string
 @return book Book
+@return canGet bool
 */
-func GetBookByID(id string) Book {
+func GetBookByID(id string) (Book, bool) {
 	db := dbSetUp()
 	defer db.Close()
 	rows, err := db.Query("SELECT * FROM book WHERE Id = ?", id)
 	defer rows.Close()
+
+	// SELECT失敗時にbookがerrorでのリターン
+	if err != nil {
+		return Book{}, false
+	}
+
+	//　本が検索できた場合は、本の情報を含めてリターン
 	var book Book
 	if rows.Next() {
 		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		errCheck(err)
+		return book, true
 	}
-	return book
+	// 検索したが「０件」の場合は、book・errが共に空
+	return book, false
 }
 
 //GetAllBooks ...DB内のすべての本を取得
@@ -95,7 +106,7 @@ func InsertBook(book Book) (int64, error) {
 	return result.LastInsertId()
 }
 
-// GetSearchedBooks ...
+// GetSearchedBooks ...キーワードから本情報を取得する
 /*
 	本をキーワードで検索する
 	input:keyword string
@@ -118,19 +129,27 @@ func GetSearchedBooks(keyword string) []Book {
 	return books
 }
 
-// UpdateBook ...
+// UpdateBook ...本情報の更新処理を行う
 /*
 	本の更新
 */
-func UpdateBook(book Book) error {
+func UpdateBook(book Book) int {
 	db := dbSetUp()
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM book WHERE id = ?", &book.ID)
-	errCheck(err)
-	if rows.Next() {
+	_, canGet := GetBookByID(strconv.Itoa(book.ID))
+	GetBookByID(strconv.Itoa(book.ID))
+	var err error
+
+	if canGet {
 		upd, err := db.Prepare("UPDATE book SET title = ?, author = ?, latest_issue = ? WHERE id = ?")
 		errCheck(err)
 		_, err = upd.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.ID)
 	}
-	return err
+
+	// 更新に成功した場合は、更新対象のIDを返す
+	if err == nil {
+		return book.ID
+	}
+	//　エラーが発生した場合は、存在しないIDである「-１」を返す
+	return -1
 }
