@@ -166,12 +166,7 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("【main.go bookInsertHandler】io.Copy Error")
 			log.Println(err)
 		}
-<<<<<<< HEAD
-		log.Print("File Upload データサイズ")
-		log.Println(size)
-=======
 		log.Printf("File Upload データサイズ" + strconv.FormatInt(size, 10))
->>>>>>> develop
 		frontCoverImagePath = "/" + frontCoverImagePath
 	}
 
@@ -203,9 +198,9 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 登録した際に発行されるIDで本情報をDBから取得
-	book, canGet := db.GetBookByID(strconv.FormatInt(id, 10))
+	book, err := db.GetBookByID(strconv.FormatInt(id, 10))
 	// 取得失敗時は、ホーム画面へ遷移
-	if canGet == false {
+	if err != nil {
 		http.Redirect(w, r, ROOT, http.StatusFound)
 	}
 
@@ -239,10 +234,10 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if id := query.Get("Id"); query.Get("Id") != "" {
 		// 画面からIdを取得し、DBから紐つくデータを取得
 		var responseData ResponseDataForDetail
-		var canGet bool
-		responseData.Book, canGet = db.GetBookByID(id)
+		var err error
+		responseData.Book, err = db.GetBookByID(id)
 		// データ取得失敗時はホームへ戻す
-		if canGet == false {
+		if err != nil {
 			http.Redirect(w, r, ROOT, http.StatusFound)
 		}
 
@@ -255,7 +250,7 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 	} else {
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, ROOT, http.StatusFound)
 	}
 
 }
@@ -316,13 +311,12 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if len(errMsg) == 0 {
 		// 入力データで更新
 		updateBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue}
-		id := db.UpdateBook(updateBook)
-
+		id, err := db.UpdateBook(updateBook)
 		idString := strconv.Itoa(id)
 
 		// 更新処理が失敗していない場合は、詳細画面へ遷移（detail.html）
 		var url string
-		if id != -1 {
+		if err == nil {
 			log.Print("【main.go　UpdateBookHander】success update")
 			// 成功したことをDetailに伝えるためにsucFlgをつける
 			url = "/detail" + "?Id=" + idString + "&sucFlg=1"

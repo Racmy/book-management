@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"log"
 	"strconv"
 )
 
@@ -35,9 +36,9 @@ func dbSetUp() *sql.DB {
 /*
 @param id string
 @return book Book
-@return canGet bool
+@return err error
 */
-func GetBookByID(id string) (Book, bool) {
+func GetBookByID(id string) (Book, error) {
 	db := dbSetUp()
 	defer db.Close()
 	rows, err := db.Query("SELECT * FROM book WHERE Id = ?", id)
@@ -45,7 +46,10 @@ func GetBookByID(id string) (Book, bool) {
 
 	// SELECT失敗時にbookがerrorでのリターン
 	if err != nil {
-		return Book{}, false
+		log.Print("【BookDao.GetBookByID】id = " + id + "not exist in book table.")
+		return Book{}, err
+	} else {
+		log.Print("exist in get book by id")
 	}
 
 	//　本が検索できた場合は、本の情報を含めてリターン
@@ -53,10 +57,16 @@ func GetBookByID(id string) (Book, bool) {
 	if rows.Next() {
 		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		errCheck(err)
-		return book, true
+		if err != nil {
+			log.Print("nil is is")
+		} else {
+			log.Print("nil not not")
+		}
+		return book, err
 	}
+	log.Print("ikennmo nai")
 	// 検索したが「０件」の場合は、book・errが共に空
-	return book, false
+	return book, err
 }
 
 //GetAllBooks ...DB内のすべての本を取得
@@ -132,23 +142,39 @@ func GetSearchedBooks(keyword string) []Book {
 // UpdateBook ...本情報の更新処理を行う
 /*
 	本の更新
+	input:book Book
+	output:bookid int, err error
 */
-func UpdateBook(book Book) int {
+func UpdateBook(book Book) (int, error) {
 	db := dbSetUp()
 	defer db.Close()
+
+	var err error = nil
+
+	log.Print(book.ID)
+
 	// DBに存在する確認する
-	_, canGet := GetBookByID(strconv.Itoa(book.ID))
+	_, err = GetBookByID(strconv.Itoa(book.ID))
 
 	// 存在する場合は更新する
-	if canGet {
+	if err == nil {
 		upd, err := db.Prepare("UPDATE book SET title = ?, author = ?, latest_issue = ? WHERE id = ?")
 		errCheck(err)
 		_, err = upd.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.ID)
-		if err == nil {
-			return book.ID
+
+		// 更新失敗時のエラー
+		if err != nil {
+			log.Print("【BookDao.UpdateBook】id = " + strconv.Itoa(book.ID) + "update error.")
+			return -1, err
 		}
+
+		// 更新成功のため、IDとnilのerrを返す
+		return book.ID, err
 	}
 
+	// IDを取得できなかったログ出力
+	log.Print("【BookDao.UpdateBook】id = " + strconv.Itoa(book.ID) + "not exist in book table.")
+
 	//　エラーが発生した場合は、存在しないIDである「-１」を返す
-	return -1
+	return -1, err
 }
