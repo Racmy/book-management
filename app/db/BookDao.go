@@ -48,8 +48,6 @@ func GetBookByID(id string) (Book, error) {
 	if err != nil {
 		log.Print("【BookDao.GetBookByID】id = " + id + "not exist in book table.")
 		return Book{}, err
-	} else {
-		log.Print("exist in get book by id")
 	}
 
 	//　本が検索できた場合は、本の情報を含めてリターン
@@ -57,14 +55,9 @@ func GetBookByID(id string) (Book, error) {
 	if rows.Next() {
 		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		errCheck(err)
-		if err != nil {
-			log.Print("nil is is")
-		} else {
-			log.Print("nil not not")
-		}
 		return book, err
 	}
-	log.Print("ikennmo nai")
+
 	// 検索したが「０件」の場合は、book・errが共に空
 	return book, err
 }
@@ -150,8 +143,6 @@ func UpdateBook(book Book) (int, error) {
 	defer db.Close()
 
 	var err error = nil
-
-	log.Print(book.ID)
 
 	// DBに存在する確認する
 	_, err = GetBookByID(strconv.Itoa(book.ID))
