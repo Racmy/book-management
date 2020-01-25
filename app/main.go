@@ -166,8 +166,12 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("【main.go bookInsertHandler】io.Copy Error")
 			log.Println(err)
 		}
+<<<<<<< HEAD
 		log.Print("File Upload データサイズ")
 		log.Println(size)
+=======
+		log.Printf("File Upload データサイズ" + strconv.FormatInt(size, 10))
+>>>>>>> develop
 		frontCoverImagePath = "/" + frontCoverImagePath
 	}
 
