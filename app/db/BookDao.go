@@ -136,20 +136,19 @@ func GetSearchedBooks(keyword string) []Book {
 func UpdateBook(book Book) int {
 	db := dbSetUp()
 	defer db.Close()
+	// DBに存在する確認する
 	_, canGet := GetBookByID(strconv.Itoa(book.ID))
-	GetBookByID(strconv.Itoa(book.ID))
-	var err error
 
+	// 存在する場合は更新する
 	if canGet {
 		upd, err := db.Prepare("UPDATE book SET title = ?, author = ?, latest_issue = ? WHERE id = ?")
 		errCheck(err)
 		_, err = upd.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.ID)
+		if err == nil {
+			return book.ID
+		}
 	}
 
-	// 更新に成功した場合は、更新対象のIDを返す
-	if err == nil {
-		return book.ID
-	}
 	//　エラーが発生した場合は、存在しないIDである「-１」を返す
 	return -1
 }
