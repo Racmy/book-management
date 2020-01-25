@@ -2,16 +2,15 @@ package db
 
 import (
 	"database/sql"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
+// Book D層とP層で本の情報を受け渡す構造体
 type Book struct {
-	Id                     int
-	Title                  string
-	Author                 string
-	Latest_Issue           float64
-	Front_Cover_Image_Path string
+	ID                  int
+	Title               string
+	Author              string
+	LatestIssue         float64
+	FrontCoverImagePath string
 }
 
 func errCheck(err error) {
@@ -31,10 +30,28 @@ func dbSetUp() *sql.DB {
 	return db
 }
 
+//GetBookByID ...BookテーブルのIDに紐つく情報を1件取得
 /*
-	DB内のすべての本を取得
-	input:
-	output:[]Book
+@param id string
+@return book Book
+*/
+func GetBookByID(id string) Book {
+	db := dbSetUp()
+	defer db.Close()
+	rows, err := db.Query("SELECT * FROM book WHERE Id = ?", id)
+	defer rows.Close()
+	var book Book
+	if rows.Next() {
+		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
+		errCheck(err)
+	}
+	return book
+}
+
+//GetAllBooks ...DB内のすべての本を取得
+/*
+input:
+output:[]Book
 */
 func GetAllBooks() []Book {
 	db := dbSetUp()
@@ -45,30 +62,40 @@ func GetAllBooks() []Book {
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err = rows.Scan(&book.Id, &book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
+		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		errCheck(err)
 		books = append(books, book)
 	}
 	return books
 }
 
+//InsertBook ...
 /*
 	本を1冊DBに挿入する
 	input:Book
 	output:error
 */
-func InsertBook(book Book) error {
+func InsertBook(book Book) (int64, error) {
 	db := dbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
+	var result sql.Result
+	if book.FrontCoverImagePath == "" {
+		ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue) VALUES(?,?,?)")
+		errCheck(err)
+		// Bookを格納する
+		result, err = ins.Exec(&book.Title, &book.Author, &book.LatestIssue)
+	} else {
+		ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?)")
+		errCheck(err)
+		// Bookを格納する
+		result, err = ins.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 
-	ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?)")
-	errCheck(err)
-	// Bookを格納する
-	_, err = ins.Exec(&book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
-
-	return err
+	}
+	// Insertした結果を返す（id, error）
+	return result.LastInsertId()
 }
 
+// GetSearchedBooks ...
 /*
 	本をキーワードで検索する
 	input:keyword string
@@ -84,21 +111,34 @@ func GetSearchedBooks(keyword string) []Book {
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		// err = rows.Scan(&book.Id, &book.Title, &book.Author, &book.Latest_Issue, &book.Front_Cover_Image_Path)
-		// errCheck(err)
+		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
+		errCheck(err)
 		books = append(books, book)
 	}
 	return books
 }
 
+// UpdateBook ...
 /*
-	本登録情報の削除機能
-	@param id
-	@return err
+	本の更新
 */
-func DeleteBookById(id string) error {
+func UpdateBook(book Book) error {
 	db := dbSetUp()
 	defer db.Close()
-	_, err := db.Query("DELETE book WHERE id = ?", id)
+	rows, err := db.Query("SELECT * FROM book WHERE id = ?", &book.ID)
+	errCheck(err)
+	if rows.Next() {
+		upd, err := db.Prepare("UPDATE book SET title = ?, author = ?, latest_issue = ? WHERE id = ?")
+		errCheck(err)
+		_, err = upd.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.ID)
+	}
 	return err
+}
+
+// DeleteBookByID ...
+func DeleteBookByID(id int) error {
+	db := dbSetUp()
+	defer db.Close()
+	rows, err := db.Query("DELETE FROM book WHERE id = ?", &book.ID)
+	
 }
