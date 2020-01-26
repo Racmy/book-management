@@ -38,13 +38,16 @@ const (
 	ErrMsgTitleNull string = "タイトルを入力してください"
 	ErrMsgAuthNull  string = "著者を入力してください"
 	ErrMsgLiNull    string = "最新所持巻数を数字で入力してください"
+	ErrMsgServerErr string = "現在不安定な状態です。再度、お試しください。"
+	ErrMsgDelErr    string = "現在不安定な状態です。削除に失敗しました。再度、お試し下さい。"
 )
 
 /*
 【成功時のメッセージ文言】
 */
 const (
-	SucMsgUpdate        string = "更新が完了しました"
+	SucMsgUpdate        string = "更新が完了しました。"
+	SucMsgDel           string = "削除が完了しました。"
 	FrontCoverImageName string = "FrontCoverImageName"
 )
 
@@ -67,6 +70,7 @@ type ResponseDataForDetail struct {
 type ResponseData struct {
 	Keyword string
 	Books   []db.Book
+	SucMsg  []string
 }
 
 // RegistValue ...登録用の構造体
@@ -152,6 +156,11 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 			//ファイルアップロード失敗
 			fileUploadFlag = false
 		}
+<<<<<<< HEAD
+=======
+		log.Printf("File Upload データサイズ" + strconv.FormatInt(size, 10))
+		frontCoverImagePath = "/" + frontCoverImagePath
+>>>>>>> develop
 	}
 
 	r.ParseForm()
@@ -174,13 +183,22 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		FrontCoverImagePath: frontCoverImagePath,
 	}
 
-	id, dbErr := db.InsertBook(insertBook)
-	if dbErr != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+	// 入力チェック後の本データを登録
+	id, insErr := db.InsertBook(insertBook)
+	//　本の登録失敗時には、ホーム画面へ遷移
+	if insErr != nil {
+		http.Redirect(w, r, ROOT, http.StatusFound)
+	}
+
+	// 登録した際に発行されるIDで本情報をDBから取得
+	book, err := db.GetBookByID(strconv.FormatInt(id, 10))
+	// 取得失敗時は、ホーム画面へ遷移
+	if err != nil {
+		http.Redirect(w, r, ROOT, http.StatusFound)
 	}
 
 	// テンプレートにデータを埋め込む
-	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", db.GetBookByID(strconv.FormatInt(id, 10))); err != nil {
+	if err := tmpl.ExecuteTemplate(w, "bookRegistResult.html", book); err != nil {
 		log.Fatal(err)
 	}
 
@@ -193,6 +211,12 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	var tpl = template.Must(template.ParseFiles("./template/list.html"))
 	var responseData ResponseData
 	responseData.Books = db.GetAllBooks()
+
+	query := r.URL.Query()
+	if query.Get("sucDelFlg") != "" {
+		responseData.SucMsg = append(responseData.SucMsg, SucMsgDel)
+	}
+
 	responseData.Keyword = ""
 	if err := tpl.ExecuteTemplate(w, "list.html", responseData); err != nil {
 		log.Fatal(err)
@@ -209,7 +233,13 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if id := query.Get("Id"); query.Get("Id") != "" {
 		// 画面からIdを取得し、DBから紐つくデータを取得
 		var responseData ResponseDataForDetail
-		responseData.Book = db.GetBookByID(id)
+		var err error
+		responseData.Book, err = db.GetBookByID(id)
+		// データ取得失敗時はホームへ戻す
+		if err != nil {
+			http.Redirect(w, r, ROOT, http.StatusFound)
+		}
+
 		//更新成功時のメッセージを格納
 		if query.Get("sucFlg") != "" {
 			responseData.SucMsg = append(responseData.SucMsg, SucMsgUpdate)
@@ -219,7 +249,7 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 	} else {
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, ROOT, http.StatusFound)
 	}
 
 }
@@ -264,7 +294,6 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	latestIssueString := r.FormValue(LatestIssue)
 	latestIssue, strConvErr := strconv.ParseFloat(latestIssueString, 64)
 
-	var url = "/detail"
 	var errMsg []string
 	/*エラーチェック【相談】登録との共通化*/
 	if title == "" {
@@ -281,21 +310,66 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if len(errMsg) == 0 {
 		// 入力データで更新
 		updateBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue}
-		db.UpdateBook(updateBook)
-		// 成功したことをDetailに伝えるためにsucFlgをつける
-		url += "?Id=" + id + "&sucFlg=1"
-		http.Redirect(w, r, url, http.StatusFound)
-	} else {
-		var tmpl = template.Must(template.ParseFiles("./template/detail.html"))
-		// エラー時は、画面から送られてきたデータを渡す
-		inputBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue, FrontCoverImagePath: imgPath}
+		id, err := db.UpdateBook(updateBook)
+		idString := strconv.Itoa(id)
 
-		// 画面に表示するデータを格納
-		responseData := ResponseDataForDetail{Book: inputBook, ErrMsg: errMsg}
-
-		if err := tmpl.ExecuteTemplate(w, "detail.html", responseData); err != nil {
-			log.Fatal(err)
+		// 更新処理が失敗していない場合は、詳細画面へ遷移（detail.html）
+		var url string
+		if err == nil {
+			log.Print("【main.go　UpdateBookHander】success update")
+			// 成功したことをDetailに伝えるためにsucFlgをつける
+			url = "/detail" + "?Id=" + idString + "&sucFlg=1"
+			http.Redirect(w, r, url, http.StatusFound)
+		} else {
+			// 更新に失敗したことを、エラーメッセージにつめる
+			errMsg = append(errMsg, ErrMsgServerErr)
 		}
+	}
+
+	// 以下、入力ミス・更新失敗時の処理
+	log.Print("【main.go　UpdateBookHander】invalid input value or fail update")
+
+	var tmpl = template.Must(template.ParseFiles("./template/detail.html"))
+	// エラー時は、画面から送られてきたデータを渡す
+	inputBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue, FrontCoverImagePath: imgPath}
+
+	// 画面に表示するデータを格納
+	responseData := ResponseDataForDetail{Book: inputBook, ErrMsg: errMsg}
+
+	if err := tmpl.ExecuteTemplate(w, "detail.html", responseData); err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+/*
+	本の削除ハンドラ
+	/detail →　/
+*/
+func bookDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	id := r.FormValue(ID)
+	err := db.DeleteBookByID(id)
+
+	var errMsg []string
+	// 削除失敗時は詳細画面へ遷移してエラーメッセージを表示
+	if err != nil {
+		// エラーの表示
+		log.Fatal("【main.go bookDeleteHandler】本の削除に失敗しました。")
+		// 表示用のデータ準備
+		var tpl = template.Must(template.ParseFiles("./template/detail.html"))
+		errMsg = append(errMsg, ErrMsgDelErr)
+		// 画面に表示するデータを格納
+		targetBook, _ := db.GetBookByID(id)
+		responseData := ResponseDataForDetail{Book: targetBook, ErrMsg: errMsg}
+		err := tpl.ExecuteTemplate(w, "detail.html", responseData)
+		if err != nil {
+			log.Fatal("【main.go bookDeleteHandler】画面の描画中にエラーが発生しました。")
+		}
+		// 削除失敗時は本詳細画面へ遷移
+	} else {
+		url := ROOT + "?sucDelFlg=1"
+		http.Redirect(w, r, url, http.StatusFound)
 	}
 }
 
@@ -311,6 +385,7 @@ func main() {
 	r.HandleFunc(ROOT+"search", bookSearchHandler)
 	r.HandleFunc(ROOT+"detail", bookDetailHandler)
 	r.HandleFunc(ROOT+"update", bookUpdateHandler)
+	r.HandleFunc(ROOT+"delete", bookDeleteHandler)
 	// cssフレームワーク読み込み
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	// 画像フォルダ

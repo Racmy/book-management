@@ -86,7 +86,8 @@
         </div>
     </form>
 
-    <form>
+    <form method="POST" action="/delete">
+        <input name="Id" type="hidden" value="{{.Book.ID}}">
         <a href="/" class="btn btn-secondary">戻る</a>
         <button class="btn btn-danger" type="submit">削除する</button>
     </form>

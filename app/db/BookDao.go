@@ -2,6 +2,8 @@ package db
 
 import (
 	"database/sql"
+	"log"
+	"strconv"
 )
 
 // Book D層とP層で本の情報を受け渡す構造体
@@ -34,18 +36,30 @@ func dbSetUp() *sql.DB {
 /*
 @param id string
 @return book Book
+@return err error
 */
-func GetBookByID(id string) Book {
+func GetBookByID(id string) (Book, error) {
 	db := dbSetUp()
 	defer db.Close()
 	rows, err := db.Query("SELECT * FROM book WHERE Id = ?", id)
 	defer rows.Close()
+
+	// SELECT失敗時にbookがerrorでのリターン
+	if err != nil {
+		log.Print("【BookDao.GetBookByID】id = " + id + "not exist in book table.")
+		return Book{}, err
+	}
+
+	//　本が検索できた場合は、本の情報を含めてリターン
 	var book Book
 	if rows.Next() {
 		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		errCheck(err)
+		return book, err
 	}
-	return book
+
+	// 検索したが「０件」の場合は、book・errが共に空
+	return book, err
 }
 
 //GetAllBooks ...DB内のすべての本を取得
@@ -95,7 +109,7 @@ func InsertBook(book Book) (int64, error) {
 	return result.LastInsertId()
 }
 
-// GetSearchedBooks ...
+// GetSearchedBooks ...キーワードから本情報を取得する
 /*
 	本をキーワードで検索する
 	input:keyword string
@@ -105,32 +119,71 @@ func GetSearchedBooks(keyword string) []Book {
 	keyword = "%" + keyword + "%"
 	db := dbSetUp()
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM book WHERE title LIKE ? OR author LIKE ?", keyword, keyword)
-	errCheck(err)
+	rows, _ := db.Query("SELECT * FROM book WHERE title LIKE ? OR author LIKE ?", keyword, keyword)
+	// errCheck(err)
 	// Bookを格納するArray作成
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
+		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		errCheck(err)
 		books = append(books, book)
 	}
 	return books
 }
 
-// UpdateBook ...
+// UpdateBook ...本情報の更新処理を行う
 /*
 	本の更新
+	input:book Book
+	output:bookid int, err error
 */
-func UpdateBook(book Book) error {
+func UpdateBook(book Book) (int, error) {
 	db := dbSetUp()
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM book WHERE id = ?", &book.ID)
-	errCheck(err)
-	if rows.Next() {
+
+	var err error = nil
+
+	// DBに存在する確認する
+	_, err = GetBookByID(strconv.Itoa(book.ID))
+
+	// 存在する場合は更新する
+	if err == nil {
 		upd, err := db.Prepare("UPDATE book SET title = ?, author = ?, latest_issue = ? WHERE id = ?")
 		errCheck(err)
 		_, err = upd.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.ID)
+
+		// 更新失敗時のエラー
+		if err != nil {
+			log.Print("【BookDao.UpdateBook】id = " + strconv.Itoa(book.ID) + "update error.")
+			return -1, err
+		}
+
+		// 更新成功のため、IDとnilのerrを返す
+		return book.ID, err
 	}
-	return err
+
+	// IDを取得できなかったログ出力
+	log.Print("【BookDao.UpdateBook】id = " + strconv.Itoa(book.ID) + "not exist in book table.")
+
+	//　エラーが発生した場合は、存在しないIDである「-１」を返す
+	return -1, err
+}
+
+// DeleteBookByID ... 本の削除を行う
+/*
+	本の削除機能
+	@param id 本のID
+	@return error 削除失敗時：nil
+*/
+func DeleteBookByID(id string) error {
+	db := dbSetUp()
+	defer db.Close()
+	_, err := db.Query("DELETE FROM book WHERE id = ?", id)
+
+	if err != nil {
+		log.Print("【BookDao.DeleteBookByID】" + id + "error can't delete")
+	}
+
+	return nil
 }
