@@ -39,13 +39,15 @@ const (
 	ErrMsgAuthNull  string = "著者を入力してください"
 	ErrMsgLiNull    string = "最新所持巻数を数字で入力してください"
 	ErrMsgServerErr string = "現在不安定な状態です。再度、お試しください。"
+	ErrMsgDelErr    string = "現在不安定な状態です。削除に失敗しました。再度、お試し下さい。"
 )
 
 /*
 【成功時のメッセージ文言】
 */
 const (
-	SucMsgUpdate        string = "更新が完了しました"
+	SucMsgUpdate        string = "更新が完了しました。"
+	SucMsgDel           string = "削除が完了しました。"
 	FrontCoverImageName string = "FrontCoverImageName"
 )
 
@@ -68,6 +70,7 @@ type ResponseDataForDetail struct {
 type ResponseData struct {
 	Keyword string
 	Books   []db.Book
+	SucMsg  []string
 }
 
 // RegistValue ...登録用の構造体
@@ -218,6 +221,12 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	var tpl = template.Must(template.ParseFiles("./template/list.html"))
 	var responseData ResponseData
 	responseData.Books = db.GetAllBooks()
+
+	query := r.URL.Query()
+	if query.Get("sucDelFlg") != "" {
+		responseData.SucMsg = append(responseData.SucMsg, SucMsgDel)
+	}
+
 	responseData.Keyword = ""
 	if err := tpl.ExecuteTemplate(w, "list.html", responseData); err != nil {
 		log.Fatal(err)
@@ -344,6 +353,37 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
+	本の削除ハンドラ
+	/detail →　/
+*/
+func bookDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	id := r.FormValue(ID)
+	err := db.DeleteBookByID(id)
+
+	var errMsg []string
+	// 削除失敗時は詳細画面へ遷移してエラーメッセージを表示
+	if err != nil {
+		// エラーの表示
+		log.Fatal("【main.go bookDeleteHandler】本の削除に失敗しました。")
+		// 表示用のデータ準備
+		var tpl = template.Must(template.ParseFiles("./template/detail.html"))
+		errMsg = append(errMsg, ErrMsgDelErr)
+		// 画面に表示するデータを格納
+		targetBook, _ := db.GetBookByID(id)
+		responseData := ResponseDataForDetail{Book: targetBook, ErrMsg: errMsg}
+		err := tpl.ExecuteTemplate(w, "detail.html", responseData)
+		if err != nil {
+			log.Fatal("【main.go bookDeleteHandler】画面の描画中にエラーが発生しました。")
+		}
+		// 削除失敗時は本詳細画面へ遷移
+	} else {
+		url := ROOT + "?sucDelFlg=1"
+		http.Redirect(w, r, url, http.StatusFound)
+	}
+}
+
+/*
 	ルーティング
 */
 func main() {
@@ -355,6 +395,7 @@ func main() {
 	r.HandleFunc(ROOT+"search", bookSearchHandler)
 	r.HandleFunc(ROOT+"detail", bookDetailHandler)
 	r.HandleFunc(ROOT+"update", bookUpdateHandler)
+	r.HandleFunc(ROOT+"delete", bookDeleteHandler)
 	// cssフレームワーク読み込み
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	// 画像フォルダ

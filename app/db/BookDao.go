@@ -119,13 +119,13 @@ func GetSearchedBooks(keyword string) []Book {
 	keyword = "%" + keyword + "%"
 	db := dbSetUp()
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM book WHERE title LIKE ? OR author LIKE ?", keyword, keyword)
-	errCheck(err)
+	rows, _ := db.Query("SELECT * FROM book WHERE title LIKE ? OR author LIKE ?", keyword, keyword)
+	// errCheck(err)
 	// Bookを格納するArray作成
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
+		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		errCheck(err)
 		books = append(books, book)
 	}
@@ -168,4 +168,22 @@ func UpdateBook(book Book) (int, error) {
 
 	//　エラーが発生した場合は、存在しないIDである「-１」を返す
 	return -1, err
+}
+
+// DeleteBookByID ... 本の削除を行う
+/*
+	本の削除機能
+	@param id 本のID
+	@return error 削除失敗時：nil
+*/
+func DeleteBookByID(id string) error {
+	db := dbSetUp()
+	defer db.Close()
+	_, err := db.Query("DELETE FROM book WHERE id = ?", id)
+
+	if err != nil {
+		log.Print("【BookDao.DeleteBookByID】" + id + "error can't delete")
+	}
+
+	return nil
 }
