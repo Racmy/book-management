@@ -6,8 +6,9 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strconv"
+
 	"github.com/docker_go_nginx/app/db"
-	"github.com/docker_go_nginx/app/utility"
+	"github.com/docker_go_nginx/app/utility/ufile"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
@@ -84,8 +85,7 @@ type RegistValue struct {
 */
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
-	
-	
+
 	errString := []string{}
 	title := r.FormValue(TITLE)
 	author := r.FormValue(AUTHOR)
@@ -148,9 +148,8 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	//表紙画像がuploadされている時
 	if fileUploadFlag {
-		frontCoverImagePath = utilityFile.TimeFormat
-		frontCoverImagePath , err = utilityFile.DefaultFileUpload(file, fileHeader.Filename)
-		if err != nil{
+		frontCoverImagePath, err = ufile.DefaultFileUpload(file, fileHeader.Filename)
+		if err != nil {
 			//ファイルアップロード失敗
 			fileUploadFlag = false
 		}

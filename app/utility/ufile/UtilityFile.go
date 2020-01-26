@@ -1,17 +1,18 @@
-package utilityFile
+package ufile
 
 import (
 	"io"
 	"log"
+	"mime/multipart"
 	"os"
 	"strconv"
 	"time"
-	"mime/multipart"
 )
 
 const defaultFileUploadPath = "static/img/"
 
 const TimeFormat = "2006-01-02_15-04-05"
+
 /*
 	ファイルをサーバへアップロードする関数
 
@@ -23,16 +24,16 @@ const TimeFormat = "2006-01-02_15-04-05"
 		string				: fileName(with path)
 		err					: err
 */
-func FileUpload(file multipart.File, filePath string, fileName string) (string ,error){
+func FileUpload(file multipart.File, filePath string, fileName string) (string, error) {
 	savedFilePath := filePath
 	//日本時間用*Location
 	Jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 	nowTime := time.Now().In(Jst).Format(TimeFormat)
 	log.Println(nowTime)
-	savedFileName := savedFilePath + nowTime +"_" + fileName
+	savedFileName := savedFilePath + nowTime + "_" + fileName
 
 	err := fileSaved(file, savedFileName)
-	if err != nil{
+	if err != nil {
 		return "", err
 	}
 	return "/" + savedFileName, err
@@ -49,8 +50,8 @@ func FileUpload(file multipart.File, filePath string, fileName string) (string ,
 	output:
 		err					: err
 */
-func DefaultFileUpload(file multipart.File, fileName string) (string ,error){
-	return FileUpload(file,defaultFileUploadPath,fileName)
+func DefaultFileUpload(file multipart.File, fileName string) (string, error) {
+	return FileUpload(file, defaultFileUploadPath, fileName)
 }
 
 /*
