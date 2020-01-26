@@ -5,20 +5,25 @@
 	<title>Book List</title>
   <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
   <style>
-    .header {
-      height: 60px;
-      background-color: rgb(232, 232, 232);
+    nav {
+        height: 60px;
+        background-color: rgb(232, 232, 232);
     }
-    .footer{
-      height: 30px;
-      background-color: rgb(181, 181, 181);
+
+    main {
+        margin-bottom: 50px;
+    }
+
+    footer {
+        height: 30px;
+        background-color: rgb(181, 181, 181);
     }
   </style>
 </head>
 <body>
   
   <!-- ヘッダー -->
-  <nav class="navbar navbar-default header mb-3">
+  <nav class="navbar navbar-default mb-3">
     <div class="container-fluid">
       <div class="navbar-header">
         <a class="navbar-brand" href="#">余田本リスト</a>
@@ -29,51 +34,54 @@
     </div>
   </nav>
 
-  <!-- 検索 -->
-  <div class="container pb-3">
-    <div class="row">
-      <form method="get" action="/search" class="input-group mb-3">
-        <input type="text" class="form-control" name="keyword" value="{{.Keyword}}" placeholder="キーワードを入力して下さい。" aria-label="..." aria-describedby="button-addon2">
-        <div class="input-group-append">
-          <button type="submit" id="button-addon2" class="btn btn-outline-secondary">検索</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  {{ if .SucMsg}}
-  <div class="alert alert-success" role="alert">
-      <ul>
-      {{range $msg := .SucMsg}}
-      <li>{{$msg}}</li>
-      {{end}}
-      </ul>
-  </div>
-  {{ end }}
-
-  <!-- 本リスト -->
-  <div class="container mb-4">
-    <div class="row">
-      {{range .Books}}
-        <div class="card col-sm-12 col-md-5 col-lg-3 mb-3 mr-1">
-          <img class="card-img-top" src="{{.FrontCoverImagePath}}" alt="{{.Title}}">
-          <div class="card-body">
-            <h5 class="card-title">{{.Title}}</h5>
-            <p class="card-text">
-            【著者】{{.Author}}<br>
-            【所持巻数】{{.LatestIssue}}
-            </p>
-            <a href="/detail?Id={{.ID}}" class="btn btn-primary">詳細へ</a>
+  <main>
+    <!-- 検索 -->
+    <div class="container pb-3">
+      <div class="row">
+        <form method="get" action="/search" class="input-group mb-3">
+          <input type="text" class="form-control" name="keyword" value="{{.Keyword}}" placeholder="キーワードを入力して下さい。" aria-label="..." aria-describedby="button-addon2">
+          <div class="input-group-append">
+            <button type="submit" id="button-addon2" class="btn btn-outline-secondary">検索</button>
           </div>
-        </div>
-      {{end}}
+        </form>
+      </div>
     </div>
-  </div>
+
+    {{ if .SucMsg}}
+    <div class="alert alert-success" role="alert">
+        <ul>
+        {{range $msg := .SucMsg}}
+        <li>{{$msg}}</li>
+        {{end}}
+        </ul>
+    </div>
+    {{ end }}
+
+    <!-- 本リスト -->
+    <div class="container mb-4">
+      <div class="row">
+        {{range .Books}}
+          <div class="card col-sm-12 col-md-5 col-lg-3 mb-3 mr-1">
+            <img class="card-img-top" src="{{.FrontCoverImagePath}}" alt="{{.Title}}">
+            <div class="card-body">
+              <h5 class="card-title">{{.Title}}</h5>
+              <p class="card-text">
+              【著者】{{.Author}}<br>
+              【所持巻数】{{.LatestIssue}}
+              </p>
+              <a href="/detail?Id={{.ID}}" class="btn btn-primary">詳細へ</a>
+            </div>
+          </div>
+        {{end}}
+      </div>
+    </div>
+
+  </main>
 
   <!-- フッター -->
-  <footer class="footer fixed-bottom">
-    <div class="container">
-      <p class="text-white m-0">&copy; 2019 Racmy.</p>
-    </div>
+  <footer class="fixed-bottom">
+      <div class="container">
+          <p class="text-white m-0">&copy; 2019 Racmy.</p>
+      </div>
   </footer>
 </body>

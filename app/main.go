@@ -30,6 +30,14 @@ const (
 	IMGPATH     string = "FrontCoverImagePath"
 )
 
+/**
+【画像のパス関連の定数】
+*/
+const (
+	NewFrontCoverImagePath string = "NewFrontCoverImagePath"
+	FrontCoverImagePath    string = "FrontCoverImagePath"
+)
+
 /*
 【エラーメッセージの文言】
 */
@@ -45,9 +53,8 @@ const (
 【成功時のメッセージ文言】
 */
 const (
-	SucMsgUpdate        string = "更新が完了しました。"
-	SucMsgDel           string = "削除が完了しました。"
-	FrontCoverImageName string = "FrontCoverImageName"
+	SucMsgUpdate string = "更新が完了しました。"
+	SucMsgDel    string = "削除が完了しました。"
 )
 
 /*
@@ -140,7 +147,7 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("【main.go bookInsertHandler】not ParseMultipartForm")
 		fileUploadFlag = false
 	} else {
-		file, fileHeader, err = r.FormFile(FrontCoverImageName)
+		file, fileHeader, err = r.FormFile(FrontCoverImagePath)
 		if err != nil {
 			log.Println("【main.go bookInsertHandler】not file upload")
 			fileUploadFlag = false
@@ -299,7 +306,7 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("【main.go bookUpdateHandler】not ParseMultipartForm")
 		fileUploadFlag = false
 	} else {
-		file, fileHeader, err = r.FormFile(FrontCoverImageName)
+		file, fileHeader, err = r.FormFile(NewFrontCoverImagePath)
 		if err != nil {
 			log.Println("【main.go bookUpdateHandler】not file upload")
 			fileUploadFlag = false

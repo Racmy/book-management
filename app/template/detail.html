@@ -7,12 +7,16 @@
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <script src="../node_modules/jquery/dist/jquery.min.js"></script>
     <style>
-        .header {
+        nav {
             height: 60px;
             background-color: rgb(232, 232, 232);
         }
 
-        .footer {
+        main {
+            margin-bottom: 50px;
+        }
+
+        footer {
             height: 30px;
             background-color: rgb(181, 181, 181);
         }
@@ -41,7 +45,7 @@
 
 <body>
     <!-- header -->
-    <nav class="navbar navbar-default header mb-3">
+    <nav class="navbar navbar-default mb-3">
         <div class="container-fluid">
             <div class="navbar-header">
                 <a class="navbar-brand" href="/">余田本リスト</a>
@@ -54,80 +58,82 @@
     <!-- /header -->
 
     <!-- 本情報表示 -->
-    <form class="form-horizontal" action="/update" method="POST">
-        <label>現在の画像</label>
-        <div class="d-flex">
-            <img class="img-thumbnail col-6" style="max-height: 400px;" src="{{.Book.FrontCoverImagePath}}">
-            <div id="preview" class="img-thumbnail col-6" style="max-height: 400px;"></div>
-        </div>
-        <input name="Id" type="hidden" value="{{.Book.ID}}">
-        <input name="FrontCoverImagePath" type="hidden" value="{{.Book.FrontCoverImagePath}}">
+    <main>
+        <form class="form-horizontal" action="/update" method="POST" enctype="multipart/form-data">
+            <label>現在の画像</label>
+            <div class="d-flex">
+                <img class="img-thumbnail col-6" style="max-height: 400px;" src="{{.Book.FrontCoverImagePath}}">
+                <div id="preview" class="img-thumbnail col-6" style="max-height: 400px;"></div>
+            </div>
+            <input name="Id" type="hidden" value="{{.Book.ID}}">
+            <input name="FrontCoverImagePath" type="hidden" value="{{.Book.FrontCoverImagePath}}">
 
-        {{ if .ErrMsg}}
-            <div class="alert alert-danger" role="alert">
-                <ul>
-                {{range $msg := .ErrMsg}}
-                <li>{{$msg}}</li>
-                {{end}}
-                </ul>
-            </div>
-        {{ end }}
+            {{ if .ErrMsg}}
+                <div class="alert alert-danger" role="alert">
+                    <ul>
+                    {{range $msg := .ErrMsg}}
+                    <li>{{$msg}}</li>
+                    {{end}}
+                    </ul>
+                </div>
+            {{ end }}
 
-        {{ if .SucMsg}}
-            <div class="alert alert-success" role="alert">
-                <ul>
-                {{range $msg := .SucMsg}}
-                <li>{{$msg}}</li>
-                {{end}}
-                </ul>
+            {{ if .SucMsg}}
+                <div class="alert alert-success" role="alert">
+                    <ul>
+                    {{range $msg := .SucMsg}}
+                    <li>{{$msg}}</li>
+                    {{end}}
+                    </ul>
+                </div>
+            {{ end }}
+            <div class="form-group">
+                <label class="col-3 control-label">※タイトル：</label>
+                <div class="col-8">
+                    <input class="form-control" 　type="text" name="Title" value="{{.Book.Title}}">
+                </div>
             </div>
-        {{ end }}
-        <div class="form-group">
-            <label class="col-3 control-label">※タイトル：</label>
-            <div class="col-8">
-                <input class="form-control" 　type="text" name="Title" value="{{.Book.Title}}">
+            <div class="form-group">
+                <label class="col-3 control-label">※著者：</label>
+                <div class="col-8">
+                    <input class="form-control" 　type="text" name="Author" value="{{.Book.Author}}">
+                </div>
             </div>
-        </div>
-        <div class="form-group">
-            <label class="col-3 control-label">※著者：</label>
-            <div class="col-8">
-                <input class="form-control" 　type="text" name="Author" value="{{.Book.Author}}">
+            <div class="form-group">
+                <label class="col-3 control-label">※所持最新巻数：</label>
+                <div class="col-8">
+                    <input class="form-control" type="tel" name="LatestIssue" value="{{.Book.LatestIssue}}">
+                </div>
             </div>
-        </div>
-        <div class="form-group">
-            <label class="col-3 control-label">※所持最新巻数：</label>
-            <div class="col-8">
-                <input class="form-control" type="tel" name="LatestIssue" value="{{.Book.LatestIssue}}">
+            <div class="form-group">
+            <label class="col-3 control-label">表紙画像：</label>
+            <div class="input-group">
+                <div class="col-8">
+                <input type="text" class="form-control" readonly="">
+                <label class="input-group-btn">
+                    <span class="btn btn-primary">
+                        画像選択<input type="file" name="NewFrontCoverImagePath" style="display:none">
+                    </span>
+                </label>
+                </div>
             </div>
-        </div>
-        <div class="form-group">
-        <label class="col-3 control-label">表紙画像：</label>
-        <div class="input-group">
-            <div class="col-8">
-            <input type="text" class="form-control" readonly="">
-            <label class="input-group-btn">
-                <span class="btn btn-primary">
-                    画像選択<input type="file" name="NewFrontCoverImagePath" style="display:none">
-                </span>
-            </label>
             </div>
-        </div>
-        </div>
-        <div class="form-group">
-            <div class="col-offset-8 col-2">
-                <input class="btn btn-success" type="submit" value="更新する">
+            <div class="form-group">
+                <div class="col-offset-8 col-2">
+                    <input class="btn btn-success" type="submit" value="更新する">
+                </div>
             </div>
-        </div>
-    </form>
+        </form>
 
-    <form method="POST" action="/delete">
-        <input name="Id" type="hidden" value="{{.Book.ID}}">
-        <a href="/" class="btn btn-secondary">戻る</a>
-        <button class="btn btn-danger" type="submit">削除する</button>
-    </form>
+        <form method="POST" action="/delete">
+            <input name="Id" type="hidden" value="{{.Book.ID}}">
+            <a href="/" class="btn btn-secondary">戻る</a>
+            <button class="btn btn-danger" type="submit">削除する</button>
+        </form>
+    </main>
 
     <!-- フッター -->
-    <footer class="footer fixed-bottom">
+    <footer class="fixed-bottom">
         <div class="container">
             <p class="text-white m-0">&copy; 2019 Racmy.</p>
         </div>

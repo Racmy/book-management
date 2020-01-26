@@ -7,13 +7,18 @@
   <link rel="stylesheet" href="css/list.css">
   <script src="../node_modules/jquery/dist/jquery.min.js"></script>
   <style>
-    .header {
-      height: 60px;
-      background-color: rgb(232, 232, 232);
+    nav {
+        height: 60px;
+        background-color: rgb(232, 232, 232);
     }
-    .footer{
-      height: 30px;
-      background-color: rgb(181, 181, 181);
+
+    main {
+        margin-bottom: 50px;
+    }
+
+    footer {
+        height: 30px;
+        background-color: rgb(181, 181, 181);
     }
   </style>
   <script>
@@ -38,69 +43,69 @@
   </script>
 </head>
 <body>
-  <nav class="navbar navbar-default header mb-3">
+  <nav class="navbar navbar-default mb-3">
     <div class="container-fluid">
       <div class="navbar-header">
         <a class="navbar-brand" href="/">余田本リスト</a>
       </div>
     </div>
   </nav>
-  
-  <form class="form-horizontal" action = "/regist/success" method="POST" enctype="multipart/form-data">
-    <div class="form-group">
-      <label class="col-3 control-label">※タイトル：</label>
-      <div class="col-8">
-        <input class="form-control"　type="text" name="Title" value="{{.Title}}" >
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="col-3 control-label">※著者：</label>
-      <div class="col-8">
-        <input class="form-control"　type="text" name="Author" value="{{.Author}}">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="col-3 control-label">※所持最新巻数：</label>
-      <div class="col-1">
-        <input class="form-control"　type="tel" name="LatestIssue" value="{{.LatestIssue}}">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="col-3 control-label">表紙画像：</label>
-      <div class="input-group">
+
+  <main>
+    <form class="form-horizontal" action = "/regist/success" method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="col-3 control-label">※タイトル：</label>
         <div class="col-8">
-          <input type="text" class="form-control" readonly="">
-          <label class="input-group-btn">
-            <span class="btn btn-primary">
-                画像選択<input type="file" name="FrontCoverImageName" style="display:none">
-            </span>
-          </label>
+          <input class="form-control"　type="text" name="Title" value="{{.Title}}" >
         </div>
       </div>
-    </div>
-    <div class="form-group">
-      <div id="preview" class="col-9"></div>
-    </div>
-    <div class="form-group">
-      <div class="col-offset-8 col-2">
-        <button class="btn btn-primary text-white" type="submit">登録</button>
+      <div class="form-group">
+        <label class="col-3 control-label">※著者：</label>
+        <div class="col-8">
+          <input class="form-control"　type="text" name="Author" value="{{.Author}}">
+        </div>
       </div>
-    </div>
-    
-  </form>
-  <div class="text-right">
-    <a class="btn btn-primary text-white" href="/">本棚へ戻る</a>  
-  </div> 
-  <ul>
-    {{range .ErrString}}
-      <li>{{.}}</li>
-    {{end}}
-  </ul>
+      <div class="form-group">
+        <label class="col-3 control-label">※所持最新巻数：</label>
+        <div class="col-1">
+          <input class="form-control"　type="tel" name="LatestIssue" value="{{.LatestIssue}}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-3 control-label">表紙画像：</label>
+        <div class="input-group">
+          <div class="col-8">
+            <input type="text" class="form-control" readonly="">
+            <label class="input-group-btn">
+              <span class="btn btn-primary">
+                  画像選択<input type="file" name="FrontCoverImagePath" style="display:none">
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div id="preview" class="col-9"></div>
+      </div>
+      <div class="form-group">
+        <div class="col-offset-8 col-2">
+          <button class="btn btn-primary text-white" type="submit">登録</button>
+        </div>
+      </div>
       
+    </form>
+    <div class="text-right">
+      <a class="btn btn-primary text-white" href="/">本棚へ戻る</a>  
+    </div> 
+    <ul>
+      {{range .ErrString}}
+        <li>{{.}}</li>
+      {{end}}
+    </ul>
+  </main>
 
-  
   <!-- フッター -->
-  <footer class="footer fixed-bottom">
+  <footer class="fixed-bottom">
     <div class="container">
       <p class="text-white m-0">&copy; 2019 Racmy.</p>
     </div>
