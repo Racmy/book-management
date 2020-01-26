@@ -2,14 +2,14 @@ package main
 
 import (
 	"html/template"
-	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"strconv"
-
+	// "os"
+	// "io"
 	"github.com/docker_go_nginx/app/db"
+	"github.com/docker_go_nginx/app/utility"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
@@ -82,7 +82,8 @@ type RegistValue struct {
 */
 func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl = template.Must(template.ParseFiles("./template/bookRegist.html"))
-
+	
+	
 	errString := []string{}
 	title := r.FormValue(TITLE)
 	author := r.FormValue(AUTHOR)
@@ -145,28 +146,12 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	//表紙画像がuploadされている時
 	if fileUploadFlag {
-		//【TODO】余田へ
-		// Filerクラスを作成する際に、static/img/（相対パス）を絶対パスでできるようにしてください。
-		frontCoverImagePath = "static/img/" + fileHeader.Filename
-
-		log.Println(frontCoverImagePath)
-		// サーバー側に保存するために空ファイルを作成
-		var saveImage *os.File
-		saveImage, err = os.Create(frontCoverImagePath)
-		if err != nil {
-			log.Println("【main.go bookInsertHandler】os.Create Error")
-			log.Println(err)
-			return
+		frontCoverImagePath = utilityFile.TimeFormat
+		frontCoverImagePath , err = utilityFile.DefaultFileUpload(file, fileHeader.Filename)
+		if err != nil{
+			//ファイルアップロード失敗
+			fileUploadFlag = false
 		}
-		defer saveImage.Close()
-		defer file.Close()
-		size, err := io.Copy(saveImage, file)
-		if err != nil {
-			log.Println("【main.go bookInsertHandler】io.Copy Error")
-			log.Println(err)
-		}
-		log.Printf("File Upload データサイズ" + strconv.FormatInt(size, 10))
-		frontCoverImagePath = "/" + frontCoverImagePath
 	}
 
 	r.ParseForm()
