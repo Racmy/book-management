@@ -6,8 +6,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strconv"
-	// "os"
-	// "io"
 	"github.com/docker_go_nginx/app/db"
 	"github.com/docker_go_nginx/app/utility"
 	_ "github.com/go-sql-driver/mysql"
@@ -156,11 +154,6 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 			//ファイルアップロード失敗
 			fileUploadFlag = false
 		}
-<<<<<<< HEAD
-=======
-		log.Printf("File Upload データサイズ" + strconv.FormatInt(size, 10))
-		frontCoverImagePath = "/" + frontCoverImagePath
->>>>>>> develop
 	}
 
 	r.ParseForm()
