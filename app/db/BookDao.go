@@ -149,9 +149,9 @@ func UpdateBook(book Book) (int, error) {
 
 	// 存在する場合は更新する
 	if err == nil {
-		upd, err := db.Prepare("UPDATE book SET title = ?, author = ?, latest_issue = ? WHERE id = ?")
+		upd, err := db.Prepare("UPDATE book SET title = ?, author = ?, latest_issue = ?, front_cover_image_path = ? WHERE id = ?")
 		errCheck(err)
-		_, err = upd.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.ID)
+		_, err = upd.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.ID)
 
 		// 更新失敗時のエラー
 		if err != nil {
