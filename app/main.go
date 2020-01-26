@@ -286,6 +286,26 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	latestIssueString := r.FormValue(LatestIssue)
 	latestIssue, strConvErr := strconv.ParseFloat(latestIssueString, 64)
 
+	//表紙画像がuploadされたかどうかを判定するフラグの初期化
+	fileUploadFlag := true
+	frontCoverImagePath := ""
+	//表紙画像を格納する変数宣言
+	var file multipart.File
+	var fileHeader *multipart.FileHeader
+	// POSTされたファイルデータをメモリに格納
+	//33554432 約30MByte(8Kのping形式には耐えられない)
+	err := r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		log.Println("【main.go bookUpdateHandler】not ParseMultipartForm")
+		fileUploadFlag = false
+	} else {
+		file, fileHeader, err = r.FormFile(FrontCoverImageName)
+		if err != nil {
+			log.Println("【main.go bookUpdateHandler】not file upload")
+			fileUploadFlag = false
+		}
+	}
+
 	var errMsg []string
 	/*エラーチェック【相談】登録との共通化*/
 	if title == "" {
@@ -301,7 +321,19 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// 入力エラーがない場合は更新処理を実施
 	if len(errMsg) == 0 {
 		// 入力データで更新
-		updateBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue}
+		updateBook := db.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue, FrontCoverImagePath: imgPath}
+		// 本画像の登録
+		if fileUploadFlag {
+			frontCoverImagePath, err = ufile.DefaultFileUpload(file, fileHeader.Filename)
+			if err != nil {
+				//ファイルアップロード失敗
+				fileUploadFlag = false
+				log.Println("【main.go　UpdateBookHander】fail file image upload")
+			} else {
+				updateBook.FrontCoverImagePath = frontCoverImagePath
+			}
+		}
+
 		id, err := db.UpdateBook(updateBook)
 		idString := strconv.Itoa(id)
 
