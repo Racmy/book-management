@@ -1,44 +1,9 @@
-<!doctype html>
-<html lang="ja">
-<head>
-	<meta charset="UTF-8">
-	<title>Book List</title>
-  <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
-  <style>
-    nav {
-        height: 60px;
-        background-color: rgb(232, 232, 232);
-    }
-
-    main {
-        margin-bottom: 50px;
-    }
-
-    footer {
-        height: 30px;
-        background-color: rgb(181, 181, 181);
-    }
-  </style>
-</head>
-<body>
-  
-  <!-- ヘッダー -->
-  <nav class="navbar navbar-default mb-3">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="#">余田本リスト</a>
-      </div>
-      <div class="">
-        <a href="/regist" class="btn btn-primary text-white">本を登録する</a>
-      </div>
-    </div>
-  </nav>
-
+{{template "header.html" .}}
   <main>
     <!-- 検索 -->
     <div class="container pb-3">
       <div class="row">
-        <form method="get" action="/search" class="input-group mb-3">
+        <form method="get" action="/book/search" class="input-group mb-3">
           <input type="text" class="form-control" name="keyword" value="{{.Keyword}}" placeholder="キーワードを入力して下さい。" aria-label="..." aria-describedby="button-addon2">
           <div class="input-group-append">
             <button type="submit" id="button-addon2" class="btn btn-outline-secondary">検索</button>
@@ -69,7 +34,7 @@
               【著者】{{.Author}}<br>
               【所持巻数】{{.LatestIssue}}
               </p>
-              <a href="/detail?Id={{.ID}}" class="btn btn-primary">詳細へ</a>
+              <a href="/book/detail?Id={{.ID}}" class="btn btn-primary">詳細へ</a>
             </div>
           </div>
         {{end}}
@@ -78,10 +43,4 @@
 
   </main>
 
-  <!-- フッター -->
-  <footer class="fixed-bottom">
-      <div class="container">
-          <p class="text-white m-0">&copy; 2019 Racmy.</p>
-      </div>
-  </footer>
-</body>
+{{template "footer.html" .}}

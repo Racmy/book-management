@@ -1,0 +1,56 @@
+{{template "header.html" .}}
+
+  <main>
+    <form class="form-horizontal" action = "/book/regist/process" method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="col-3 control-label">※タイトル：</label>
+        <div class="col-8">
+          <input class="form-control"　type="text" name="Title" value="{{.Title}}" >
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-3 control-label">※著者：</label>
+        <div class="col-8">
+          <input class="form-control"　type="text" name="Author" value="{{.Author}}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-3 control-label">※所持最新巻数：</label>
+        <div class="col-1">
+          <input class="form-control"　type="tel" name="LatestIssue" value="{{.LatestIssue}}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-3 control-label">表紙画像：</label>
+        <div class="input-group">
+          <div class="col-8">
+            <input type="text" class="form-control" readonly="">
+            <label class="input-group-btn">
+              <span class="btn btn-primary">
+                  画像選択<input type="file" name="FrontCoverImagePath" style="display:none">
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div id="preview" class="col-9"></div>
+      </div>
+      <div class="form-group">
+        <div class="col-offset-8 col-2">
+          <button class="btn btn-primary text-white" type="submit">登録</button>
+        </div>
+      </div>
+      
+    </form>
+    <div class="text-right">
+      <a class="btn btn-primary text-white" href="/book">本棚へ戻る</a>  
+    </div> 
+    <ul>
+      {{range .ErrString}}
+        <li>{{.}}</li>
+      {{end}}
+    </ul>
+  </main>
+
+{{template "footer.html" .}}

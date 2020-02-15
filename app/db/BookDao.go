@@ -1,9 +1,21 @@
-package db
+package bookdao
 
 import (
 	"database/sql"
 	"log"
 	"strconv"
+)
+
+/**
+HTMLのフォームのnameに与える名前
+*/
+const (
+	ID          string = "Id"
+	TITLE       string = "Title"
+	AUTHOR      string = "Author"
+	LatestIssue string = "LatestIssue"
+	IMGPATH     string = "FrontCoverImagePath"
+	NewIMGPATH  string = "NewFrontCoverImagePath"
 )
 
 // Book D層とP層で本の情報を受け渡す構造体
