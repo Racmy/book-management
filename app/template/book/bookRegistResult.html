@@ -1,33 +1,4 @@
-<!doctype html>
-<html lang="ja">
-<head>
-	<meta charset="UTF-8">
-	<title>Book List</title>
-  <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
-  <style>
-    nav {
-        height: 60px;
-        background-color: rgb(232, 232, 232);
-    }
-
-    main {
-        margin-bottom: 50px;
-    }
-
-    footer {
-        height: 30px;
-        background-color: rgb(181, 181, 181);
-    }
-  </style>
-</head>
-<body>
-  <nav class="navbar navbar-default mb-3">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="/">余田本リスト</a>
-      </div>
-    </div>
-  </nav>
+{{template "header.html" .}}
 
   <main>
     <h1 class="my-3 ml-3">登録内容</h1>
@@ -53,10 +24,4 @@
     </div>
   </main>
   
-  <!-- フッター -->
-  <footer class="fixed-bottom">
-    <div class="container">
-        <p class="text-white m-0">&copy; 2019 Racmy.</p>
-    </div>
-  </footer>
-</body>
+{{template "footer.html" .}}

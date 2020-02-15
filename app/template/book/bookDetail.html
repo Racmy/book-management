@@ -1,62 +1,4 @@
-<!doctype html>
-<html lang="ja">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Book List</title>
-    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
-    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
-    <style>
-        nav {
-            height: 60px;
-            background-color: rgb(232, 232, 232);
-        }
-
-        main {
-            margin-bottom: 50px;
-        }
-
-        footer {
-            height: 30px;
-            background-color: rgb(181, 181, 181);
-        }
-    </style>
-    <script>
-        $(document).on('change', ':file', function() {
-          var input = $(this),
-          numFiles = input.get(0).files ? input.get(0).files.length : 1,
-          label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
-          input.parent().parent().prev(':text').val(label);
-    
-          //ファイルオブジェクトを取得する
-          $('#preview img').remove();
-          var file = $(this).prop('files')[0];
-          if(!file.type.match('image.*')){
-              return;
-          }
-          var fileReader = new FileReader();
-          fileReader.onloadend = function() {
-              $('#preview').html('<img src="' + fileReader.result + '"style="width: 100%; max-height: 380px;"/>');
-          }
-          fileReader.readAsDataURL(file);
-        });
-      </script>
-</head>
-
-<body>
-    <!-- header -->
-    <nav class="navbar navbar-default mb-3">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="/">余田本リスト</a>
-            </div>
-            <div class="">
-                <a href="/regist" class="btn btn-primary text-white">本を登録する</a>
-            </div>
-        </div>
-    </nav>
-    <!-- /header -->
-
+{{template "header.html" .}}
     <!-- 本情報表示 -->
     <main>
         <form class="form-horizontal" action="/update" method="POST" enctype="multipart/form-data">
@@ -132,10 +74,4 @@
         </form>
     </main>
 
-    <!-- フッター -->
-    <footer class="fixed-bottom">
-        <div class="container">
-            <p class="text-white m-0">&copy; 2019 Racmy.</p>
-        </div>
-    </footer>
-</body>
+{{template "footer.html" .}}
