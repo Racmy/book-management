@@ -1,7 +1,7 @@
 {{template "header.html" .}}
 
   <main>
-    <form class="form-horizontal" action = "/regist/success" method="POST" enctype="multipart/form-data">
+    <form class="form-horizontal" action = "/book/regist/process" method="POST" enctype="multipart/form-data">
       <div class="form-group">
         <label class="col-3 control-label">※タイトル：</label>
         <div class="col-8">
@@ -44,7 +44,7 @@
       
     </form>
     <div class="text-right">
-      <a class="btn btn-primary text-white" href="/">本棚へ戻る</a>  
+      <a class="btn btn-primary text-white" href="/book">本棚へ戻る</a>  
     </div> 
     <ul>
       {{range .ErrString}}
@@ -53,4 +53,4 @@
     </ul>
   </main>
 
-  {{template "footer.html" .}}
+{{template "footer.html" .}}

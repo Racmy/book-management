@@ -7,16 +7,11 @@ import (
 	"strconv"
 	"text/template"
 	"github.com/docker_go_nginx/app/common/message"
+	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/db"
 	"github.com/docker_go_nginx/app/utility/ufile"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
-)
-
-// URL
-const (
-	ROOTURL    string = "/"
-	BOOKURL	   string = ROOTURL + "book"
 )
 
 var tpl *template.Template
@@ -92,7 +87,7 @@ func bookRegistHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-	本を登録完了画面へのハンドラ
+	本を登録処理のハンドラ
 */
 func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	tpl.New(bookRegistResultHTMLName).ParseFiles(bookTemplatePath + bookRegistResultHTMLName)
@@ -133,7 +128,7 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	latestIssue, strConvErr := strconv.ParseFloat(latestIssueString, 64)
 
 	if (title == "") || (author == "") || (strConvErr != nil) {
-		var url = "/regist"
+		var url = appconst.BookRegistURL
 		url += "?Title=" + title + "&Author=" + author + "&bookdao.LatestIssue=" + latestIssueString + "&ErrCheckFlag=1"
 		http.Redirect(w, r, url, http.StatusFound)
 	}
@@ -149,21 +144,32 @@ func bookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	id, insErr := bookdao.InsertBook(insertBook)
 	//　本の登録失敗時には、ホーム画面へ遷移
 	if insErr != nil {
-		http.Redirect(w, r, ROOTURL, http.StatusFound)
+		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 	}
 
-	// 登録した際に発行されるIDで本情報をDBから取得
-	book, err := bookdao.GetBookByID(strconv.FormatInt(id, 10))
-	// 取得失敗時は、ホーム画面へ遷移
-	if err != nil {
-		http.Redirect(w, r, ROOTURL, http.StatusFound)
-	}
+	idString := strconv.FormatInt(id, 10)
+	
 
-	// テンプレートにデータを埋め込む
-	if err := tpl.ExecuteTemplate(w, bookRegistResultHTMLName, book); err != nil {
-		log.Fatal(err)
-	}
+	http.Redirect(w, r, appconst.BookRegistResultURL + "?Id=" + idString, http.StatusFound)
 
+}
+
+/*
+	本を登録完了画面へのハンドラ
+*/
+func bookInsertResultHandler(w http.ResponseWriter, r *http.Request) {
+	tpl.New(bookRegistResultHTMLName).ParseFiles(bookTemplatePath + bookRegistResultHTMLName)
+	r.ParseForm()
+	id := r.FormValue(bookdao.ID)
+
+	if book, err := bookdao.GetBookByID(id); err == nil {
+		// テンプレートにデータを埋め込む
+		if err := tpl.ExecuteTemplate(w, bookRegistResultHTMLName, book); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
+	}
 }
 
 /*
@@ -199,7 +205,7 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
 		responseData.Book, err = bookdao.GetBookByID(id)
 		// データ取得失敗時はホームへ戻す
 		if err != nil {
-			http.Redirect(w, r, ROOTURL, http.StatusFound)
+			http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 		}
 
 		//更新成功時のメッセージを格納
@@ -211,7 +217,7 @@ func bookDetailHandler(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 	} else {
-		http.Redirect(w, r, ROOTURL, http.StatusFound)
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 	}
 
 }
@@ -226,7 +232,7 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 	if keyword := query.Get("keyword"); query.Get("keyword") != "" {
 		// keywordがnullの場合は、HOMEへリダイレクト
 		if keyword == "" {
-			http.Redirect(w, r, ROOTURL, http.StatusFound)
+			http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 		}
 
 		tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
@@ -240,7 +246,7 @@ func bookSearchHandler(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 	} else {
-		http.Redirect(w, r, ROOTURL, http.StatusFound)
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 	}
 }
 
@@ -312,7 +318,7 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			log.Print("【main.go　UpdateBookHander】success update")
 			// 成功したことをDetailに伝えるためにsucFlgをつける
-			url = "/detail" + "?Id=" + idString + "&sucFlg=1"
+			url = appconst.BookDetailLURL + "?Id=" + idString + "&sucFlg=1"
 			http.Redirect(w, r, url, http.StatusFound)
 		} else {
 			// 更新に失敗したことを、エラーメッセージにつめる
@@ -336,7 +342,7 @@ func bookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 /*
 	本の削除ハンドラ
-	/detail →　/
+	/detail →　/book
 */
 func bookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
@@ -360,7 +366,7 @@ func bookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// 削除失敗時は本詳細画面へ遷移
 	} else {
-		url := ROOTURL + "?sucDelFlg=1"
+		url := appconst.BookURL + "?sucDelFlg=1"
 		http.Redirect(w, r, url, http.StatusFound)
 	}
 }
@@ -371,17 +377,18 @@ func bookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	tpl, _ = template.ParseGlob("./template/parts/*")
 	r := mux.NewRouter()
-	r.HandleFunc(BOOKURL, bookListHandler)
-	r.HandleFunc(BOOKURL+"regist", bookRegistHandler)
-	r.HandleFunc(BOOKURL+"/regist/success", bookInsertHandler)
-	r.HandleFunc(BOOKURL+"/search", bookSearchHandler)
-	r.HandleFunc(BOOKURL+"/detail", bookDetailHandler)
-	r.HandleFunc(BOOKURL+"/update", bookUpdateHandler)
-	r.HandleFunc(BOOKURL+"/delete", bookDeleteHandler)
+	r.HandleFunc(appconst.BookURL, bookListHandler)
+	r.HandleFunc(appconst.BookRegistURL, bookRegistHandler)
+	r.HandleFunc(appconst.BookRegistProcessURL, bookInsertHandler)
+	r.HandleFunc(appconst.BookRegistResultURL, bookInsertResultHandler)
+	r.HandleFunc(appconst.BookSearchURL, bookSearchHandler)
+	r.HandleFunc(appconst.BookDetailLURL, bookDetailHandler)
+	r.HandleFunc(appconst.BookUpdatehURL, bookUpdateHandler)
+	r.HandleFunc(appconst.BookDeleteURL, bookDeleteHandler)
 	// cssフレームワーク読み込み
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	// 画像フォルダ
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
-	http.Handle(ROOTURL, r)
+	http.Handle(appconst.RootURL, r)
 	http.ListenAndServe(":3000", nil)
 }
