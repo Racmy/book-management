@@ -3,7 +3,7 @@ package main
 import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/docker_go_nginx/app/common/appconst"
-	"github.com/docker_go_nginx/app/handler/bookhandler"
+	"github.com/docker_go_nginx/app/handler/bookHandler"
 	"text/template"
 	"net/http"
 	"github.com/gorilla/mux"
