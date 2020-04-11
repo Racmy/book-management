@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"strconv"
+	"time"
 )
 
 /**
@@ -21,11 +22,16 @@ const (
 // Book D層とP層で本の情報を受け渡す構造体
 type Book struct {
 	ID                  int
+	User_ID				int
 	Title               string
 	Author              string
 	LatestIssue         float64
 	FrontCoverImagePath string
+	active				string
+	Created_at			time.Time
+	Update_at			time.Time
 }
+
 
 func errCheck(err error) {
 	if err != nil {
@@ -39,7 +45,7 @@ func errCheck(err error) {
 	output:*sql.DB
 */
 func dbSetUp() *sql.DB {
-	db, err := sql.Open("mysql", "racmy:racmy@tcp(db:3306)/book-management")
+	db, err := sql.Open("mysql", "racmy:racmy@tcp(db:3306)/book-management?parseTime=true")
 	errCheck(err)
 	return db
 }
@@ -53,7 +59,7 @@ func dbSetUp() *sql.DB {
 func GetBookByID(id string) (Book, error) {
 	db := dbSetUp()
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM book WHERE Id = ?", id)
+	rows, err := db.Query("SELECT id, user_id, title, author, latest_issue, front_cover_image_path,active,created_at, update_at FROM book WHERE Id = ?", id)
 	defer rows.Close()
 
 	// SELECT失敗時にbookがerrorでのリターン
@@ -65,7 +71,7 @@ func GetBookByID(id string) (Book, error) {
 	//　本が検索できた場合は、本の情報を含めてリターン
 	var book Book
 	if rows.Next() {
-		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
+		err = rows.Scan(&book.ID, &book.User_ID , &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
 		errCheck(err)
 		return book, err
 	}
@@ -82,13 +88,13 @@ output:[]Book
 func GetAllBooks() []Book {
 	db := dbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
-	rows, err := db.Query("SELECT * FROM book")
+	rows, err := db.Query("SELECT id, user_id, title, author, latest_issue, front_cover_image_path,active,created_at, update_at FROM book")
 	errCheck(err)
 	// Bookを格納するArray作成
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err = rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
+		err = rows.Scan(&book.ID, &book.User_ID , &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
 		errCheck(err)
 		books = append(books, book)
 	}
@@ -106,16 +112,17 @@ func InsertBook(book Book) (int64, error) {
 	defer db.Close() // 関数がリターンする直前に呼び出される
 	var result sql.Result
 	if book.FrontCoverImagePath == "" {
-		ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue) VALUES(?,?,?)")
+		ins, err := db.Prepare("INSERT INTO book (user_id,title,author,latest_issue) VALUES(?,?,?,?)")
 		errCheck(err)
 		// Bookを格納する
-		result, err = ins.Exec(&book.Title, &book.Author, &book.LatestIssue)
+		result, err = ins.Exec(1, &book.Title,&book.Author, &book.LatestIssue)
+		errCheck(err)
 	} else {
-		ins, err := db.Prepare("INSERT INTO book (title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?)")
+		ins, err := db.Prepare("INSERT INTO book (user_id,title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?,?)")
 		errCheck(err)
 		// Bookを格納する
-		result, err = ins.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
-
+		result, err = ins.Exec(1, &book.Title,&book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
+		errCheck(err)
 	}
 	// Insertした結果を返す（id, error）
 	return result.LastInsertId()
@@ -131,13 +138,13 @@ func GetSearchedBooks(keyword string) []Book {
 	keyword = "%" + keyword + "%"
 	db := dbSetUp()
 	defer db.Close()
-	rows, _ := db.Query("SELECT * FROM book WHERE title LIKE ? OR author LIKE ?", keyword, keyword)
+	rows, _ := db.Query("SELECT id, user_id, title, author, latest_issue, front_cover_image_path,active,created_at, update_at FROM book WHERE title LIKE ? OR author LIKE ?", keyword, keyword)
 	// errCheck(err)
 	// Bookを格納するArray作成
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
+		err := rows.Scan(&book.ID, &book.User_ID , &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
 		errCheck(err)
 		books = append(books, book)
 	}
