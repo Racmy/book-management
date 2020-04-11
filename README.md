@@ -22,4 +22,4 @@ https://docs.docker.com/install/
 * 全て出力する場合  
 1. docker-compose logs
 * 最新の結果だけ出したい場合、毎回docker-compose logsをやらなくて済む
-2. docker logs -f --tail=500 <コンテナID>
+2. docker logs -f <コンテナID>
