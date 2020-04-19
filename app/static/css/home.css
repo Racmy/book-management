@@ -1,3 +1,68 @@
-p {
-    color: red;
+/*共通*/
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", YuGothic, Verdana, Meiryo, "M+ 1p", sans-serif;
+  }
+
+nav {
+    height: 60px;
+    background-color: rgb(232, 232, 232);
+}
+
+main {
+    margin-bottom: 50px;
+}
+
+footer {
+    height: 30px;
+    background-color: rgb(181, 181, 181);
+}
+
+#catch-phrase {
+    font-size: 32px;
+    /* f */
+}
+
+#container {
+    display:flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+}
+
+#contents-img{
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+
+/*ログインのアーティクル*/
+article#login {
+    padding: 30px;
+}
+
+article#login #catch-phrase{
+    margin-bottom: 30px;
+}
+
+/*ログインフォーム*/
+article#login form {
+    border: 1px solid #e8e8e8;
+    padding: 80px 40px;
+    box-shadow: 10px 10px #e8e8e8;
+}
+
+article#login .myform {
+    padding: 20px;
+}
+
+article#login #login-button {
+    display: inline-block;
+    width: auto;
+}
+
+#new-account-link {
+    margin-left: 20px;
+    margin-top: 40px;
 }
