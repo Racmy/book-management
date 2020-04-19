@@ -26,3 +26,6 @@ https://docs.docker.com/install/
 
 ### スマホからアプリの挙動を確認する方法
 https://qiita.com/nyamazu/items/42802cde2baf9146788a
+
+### Goのセッションの使い方の良さそうなサンプル
+https://qiita.com/yamoridon/items/d999e28bd576249b1d6e
