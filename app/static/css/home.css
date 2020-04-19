@@ -17,9 +17,61 @@ footer {
     background-color: rgb(181, 181, 181);
 }
 
+/*headerのcss開始*/
+.navbar>.container-fluid {
+    align-items: normal;
+    padding-bottom: 2000px;
+}
+
+#nav-info {
+    position: relative;
+}
+
+/*iconの吹き出し*/
+#icon {
+    cursor: pointer;
+}
+
+
+#iconInfo {
+    border: 1px solid black;
+    display: none;
+    padding: 30px;
+    background-color: white;
+    z-index: 100;
+    position: relative;
+    top: 40px;
+    border-radius: 10px;
+}
+
+#iconInfo:before {
+    content: "";
+    position: absolute;
+    top: -24px;
+    left: 90%;
+    margin-left: -15px;
+    border: 12px solid transparent;
+    border-bottom: 12px solid #FFF;
+    z-index: 2;
+}
+
+#iconInfo:after {
+    content: "";
+    position: absolute;
+    top: -30px;
+    left: 90%;
+    margin-left: -17px;
+    border: 14px solid transparent;
+    border-bottom: 14px solid #555;
+    z-index: 1;
+  }
+
+/*headerのcss終了*/
+
+/*index.htmlのcss開始*/
+
 #catch-phrase {
     font-size: 32px;
-    /* f */
 }
 
 #container {
@@ -66,3 +118,5 @@ article#login #login-button {
     margin-left: 20px;
     margin-top: 40px;
 }
+
+/*index.html のcss終了*/
