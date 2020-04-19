@@ -1,3 +1,122 @@
-p {
-    color: red;
+/*共通*/
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", YuGothic, Verdana, Meiryo, "M+ 1p", sans-serif;
+  }
+
+nav {
+    height: 60px;
+    background-color: rgb(232, 232, 232);
 }
+
+main {
+    margin-bottom: 50px;
+}
+
+footer {
+    height: 30px;
+    background-color: rgb(181, 181, 181);
+}
+
+/*headerのcss開始*/
+.navbar>.container-fluid {
+    align-items: normal;
+    padding-bottom: 2000px;
+}
+
+#nav-info {
+    position: relative;
+}
+
+/*iconの吹き出し*/
+#icon {
+    cursor: pointer;
+}
+
+
+#iconInfo {
+    border: 1px solid black;
+    display: none;
+    padding: 30px;
+    background-color: white;
+    z-index: 100;
+    position: relative;
+    top: 40px;
+    border-radius: 10px;
+}
+
+#iconInfo:before {
+    content: "";
+    position: absolute;
+    top: -24px;
+    left: 90%;
+    margin-left: -15px;
+    border: 12px solid transparent;
+    border-bottom: 12px solid #FFF;
+    z-index: 2;
+}
+
+#iconInfo:after {
+    content: "";
+    position: absolute;
+    top: -30px;
+    left: 90%;
+    margin-left: -17px;
+    border: 14px solid transparent;
+    border-bottom: 14px solid #555;
+    z-index: 1;
+  }
+
+/*headerのcss終了*/
+
+/*index.htmlのcss開始*/
+
+#catch-phrase {
+    font-size: 32px;
+}
+
+#container {
+    display:flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+}
+
+#contents-img{
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+
+/*ログインのアーティクル*/
+article#login {
+    padding: 30px;
+}
+
+article#login #catch-phrase{
+    margin-bottom: 30px;
+}
+
+/*ログインフォーム*/
+article#login form {
+    border: 1px solid #e8e8e8;
+    padding: 80px 40px;
+    box-shadow: 10px 10px #e8e8e8;
+}
+
+article#login .myform {
+    padding: 20px;
+}
+
+article#login #login-button {
+    display: inline-block;
+    width: auto;
+}
+
+#new-account-link {
+    margin-left: 20px;
+    margin-top: 40px;
+}
+
+/*index.html のcss終了*/

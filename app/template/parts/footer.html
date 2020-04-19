@@ -1,7 +1,7 @@
   <!-- フッター -->
   <footer class="fixed-bottom">
     <div class="container">
-        <p class="text-white m-0">&copy; 2019 Racmy.</p>
+        <p class="text-white m-0">Copyright &copy; 2019-2020 Racmy. All Rights Reserved</p>
     </div>
 </footer>
 </body>
@@ -23,7 +23,17 @@
       fileReader.onloadend = function() {
           $('#preview').html('<img src="' + fileReader.result + '"style="width: 100%; max-height: 380px;"/>');
       }
-      fileReader.readAsDataURL(file);
+      fileReader.
+      readAsDataURL(file);
+  });
+
+  $(document).on('click', 'nav img#icon', function() {
+    const element = document.getElementById("iconInfo")
+    if(element.style.display == "none"){
+        element.style.display = "block"
+    } else {
+        element.style.display = "none"
+    }
   });
 
   // $(document).on('change', ':file', function() {

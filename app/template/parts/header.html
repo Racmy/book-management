@@ -4,32 +4,23 @@
 	<meta charset="UTF-8">
 	<title>Book List</title>
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css" type="text/css">
-    <link rel="stylesheet" href="static/css/home.css" type="text/css">
-    <style>
-        nav {
-            height: 60px;
-            background-color: rgb(232, 232, 232);
-        }
-
-        main {
-            margin-bottom: 50px;
-        }
-
-        footer {
-            height: 30px;
-            background-color: rgb(181, 181, 181);
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/home.css" type="text/css">
 </head>
 <body>
   <!-- ヘッダー -->
   <nav class="navbar navbar-default mb-3">
-    <div class="container-fluid">
+    <div class="container-fluid" style="padding-bottom: 2000px;;">
       <div class="navbar-header">
         <a class="navbar-brand" href="/book">みんなの本棚</a>
       </div>
-      <div class="">
+      <div id="nav-info">
+        <a href="#" class="btn btn-primary text-white">ログアウトする</a>
         <a href="/book/regist" class="btn btn-primary text-white">本を登録する</a>
+        <img id="icon" src="/static/img/icon/human.png">
+        <div id="iconInfo">
+          <a href="#" class="btn btn-primary text-white d-block mb-3">ログアウトする</a>
+          <a href="/book/regist" class="btn btn-primary text-white d-block">本を登録する</a>
+        </div>
       </div>
     </div>
   </nav>
