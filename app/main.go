@@ -13,6 +13,9 @@ import (
 var rootTemplatePath = "./template/"
 var homeTemplatePath = rootTemplatePath + "home/"
 var homeHTMLName = "index.html"
+var userTemplatePath = rootTemplatePath + "user/"
+var userRegistHTMLName = "regist.html"
+
 
 /*
 	ホーム画面を表示するハンドラ
@@ -25,11 +28,23 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*
+	ユーザを新規登録するハンドラ
+*/
+func userRegistHandler(w http.ResponseWriter, r *http.Request) {
+	Tpl, _ := template.ParseGlob("./template/parts/*")
+	Tpl.New(userRegistHTMLName).ParseFiles(userTemplatePath + userRegistHTMLName)
+	if err := Tpl.ExecuteTemplate(w, userRegistHTMLName, nil); err != nil {
+		log.Fatal(err)
+	}
+}
+
 // ルーティング
 func main() {
 	bookhandler.Tpl, _ = template.ParseGlob("./template/parts/*")
 	r := mux.NewRouter()
 	r.HandleFunc(appconst.RootURL, homeHandler)
+	r.HandleFunc(appconst.UserURL, userRegistHandler)
 	r.HandleFunc(appconst.BookURL, bookhandler.BookListHandler)
 	r.HandleFunc(appconst.BookRegistURL, bookhandler.BookRegistHandler)
 	r.HandleFunc(appconst.BookRegistProcessURL, bookhandler.BookInsertHandler)

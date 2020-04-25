@@ -1,7 +1,12 @@
 /*共通*/
+html {
+    height: 100%;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", YuGothic, Verdana, Meiryo, "M+ 1p", sans-serif;
-  }
+    height: 100%;
+}
 
 nav {
     height: 60px;
@@ -120,3 +125,43 @@ article#login #login-button {
 }
 
 /*index.html のcss終了*/
+
+/*regist.htmlのcss開始*/
+main#regist{
+    /* display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center; */
+    height: 100%;
+}
+
+#regist-box {
+    margin-top: 30px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #e8e8e8;
+    padding: 80px 40px;
+    box-shadow: 10px 10px #e8e8e8;
+    max-width: 900px;
+}
+
+#regist-box input {
+    width: 350px;
+}
+
+#regist-box label {
+    width: 250px;
+}
+
+#regist-box-container {
+    display: inline-block;
+    min-width: 100%;
+}
+
+@media screen and (min-width: 666px) {
+    .myform-group {
+        display: block;
+        margin-left: calc((100% - 666px)/2);;
+        margin-right: calc((100% - 666px)/2);;
+    }
+}

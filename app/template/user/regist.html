@@ -1,0 +1,33 @@
+{{template "header.html" .}}
+    <!-- ホーム画面 -->
+    <main id="regist">
+        <form>
+            <div id="regist-box" class="col-md-8 col-sm-11">
+                <div id="regist-box-container">
+                    <h2 class="myform-group  mb-5">アカウント登録</h2>
+                    <div class="myform-group mb-4">
+                        <label for="mail">メールアドレス</label>
+                        <input id="mail" type="text" placeholder="">
+                    </div>
+                    <div class="myform-group  mb-4">
+                        <label for="name">ユーザ名</label>
+                        <input id="name" type="text" placeholder="">
+                    </div>
+                    <div class="myform-group  mb-4">
+                        <label for="password">パスワード</label>
+                        <input id="password" type="password">
+                    </div>
+                    <div class="myform-group  mb-4">
+                        <label for="re-password">パスワード（再入力）</label>
+                        <input id="re-password" type="password">
+                    </div>
+                    <div class="myform-group mb-4">
+                        <label for="img">アカウント画像</label>
+                        <input id="img" type="file">
+                    </div>
+                    <button class="myform-group btn btn-primary" type="submit">登録</button>
+                </div>
+            </div>
+        </form>
+    </main>
+{{template "footer.html" .}}
