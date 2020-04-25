@@ -23,3 +23,9 @@ https://docs.docker.com/install/
 1. docker-compose logs
 * 最新の結果だけ出したい場合、毎回docker-compose logsをやらなくて済む
 2. docker logs -f <コンテナID>
+
+### スマホからアプリの挙動を確認する方法
+https://qiita.com/nyamazu/items/42802cde2baf9146788a
+
+### Goのセッションの使い方の良さそうなサンプル
+https://qiita.com/yamoridon/items/d999e28bd576249b1d6e
