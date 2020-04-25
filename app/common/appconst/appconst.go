@@ -22,7 +22,11 @@ const (
 )
 
 const (
+	SessionErrFlg string = "SessionErrFlg"
 	SessionUserID string = "SessionUserID"
 	SessionUserName string = "SessionUserName"
 	SessionUserImagePath string = "sessionUserImagePath"
+	SessionErrMsgEmail string = "emailNil"
+	SessionErrMsgPassword string = "passwordlNil"
+	SessionErrMsgNoUser string = "noUser"
 )

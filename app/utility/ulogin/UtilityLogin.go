@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	CookieName string = "cokkie"
+	CookieName string = "cokkieName1"
 )
 var(
 	// キーの長さは 16, 24, 32 バイトのいずれかでなければならない。
