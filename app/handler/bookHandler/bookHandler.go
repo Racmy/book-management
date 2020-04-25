@@ -10,6 +10,7 @@ import (
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/db"
 	"github.com/docker_go_nginx/app/utility/ufile"
+	"github.com/docker_go_nginx/app/utility/ulogin"
 )
 
 var Tpl *template.Template
@@ -48,6 +49,10 @@ type BookRegistResponseData struct {
 	本を登録画面へのハンドラ
 */
 func BookRegistHandler(w http.ResponseWriter, r *http.Request) {
+	session, err := ulogin.GetSession(r)
+	if err != nil {
+		log.Println("session err")
+	}
 	Tpl.New(bookRegistHTMLName).ParseFiles(bookTemplatePath + bookRegistHTMLName)
 
 	errString := []string{}
@@ -72,10 +77,12 @@ func BookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	if strConvErr != nil {
 		latestIssue = 1
 	}
+	userIP := session.Values[appconst.SessionUserImagePath].(string)
+	userName := session.Values[appconst.SessionUserName].(string)
 
 	responseData := BookRegistResponseData{
-		Title:       title,
-		Author:      author,
+		Title:       userIP,
+		Author:      userName,
 		LatestIssue: latestIssue,
 		ErrString:   errString,
 	}
@@ -175,6 +182,7 @@ func BookInsertResultHandler(w http.ResponseWriter, r *http.Request) {
 	ホーム画面へのハンドラ
 */
 func BookListHandler(w http.ResponseWriter, r *http.Request) {
+	
 	Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
 	var responseData BookListResponseData
 	responseData.Books = bookdao.GetAllBooks()

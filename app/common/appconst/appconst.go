@@ -11,4 +11,17 @@ const (
 	BookSearchURL string = BookURL + "/search"
 	BookUpdatehURL string = BookURL + "/update"
 	BookDeleteURL string = BookURL + "/delete"
+	LoginURL	string = RootURL + "login"
+	LoginCheckURL	string = LoginURL + "/check"
+)
+
+const (
+	EMAIL string = "MailAddress"
+	PASSWORD string = "Password"
+)
+
+const (
+	SessionUserID string = "SessionUserID"
+	SessionUserName string = "SessionUserName"
+	SessionUserImagePath string = "sessionUserImagePath"
 )

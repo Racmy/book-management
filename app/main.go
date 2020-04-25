@@ -5,6 +5,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/handler/bookHandler"
+	"github.com/docker_go_nginx/app/handler/loginHandler"
 	"text/template"
 	"net/http"
 	"github.com/gorilla/mux"
@@ -38,6 +39,8 @@ func main() {
 	r.HandleFunc(appconst.BookDetailLURL, bookhandler.BookDetailHandler)
 	r.HandleFunc(appconst.BookUpdatehURL, bookhandler.BookUpdateHandler)
 	r.HandleFunc(appconst.BookDeleteURL, bookhandler.BookDeleteHandler)
+	r.HandleFunc(appconst.LoginURL,loginHandler.LoginHandler).Methods("GET")
+	r.HandleFunc(appconst.LoginURL,loginHandler.LoginCheckHandler).Methods("POST")
 	// cssフレームワーク読み込み
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	// 画像フォルダ
