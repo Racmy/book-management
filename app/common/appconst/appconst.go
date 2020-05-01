@@ -3,7 +3,9 @@ package appconst
 // URL
 const (
 	RootURL    string = "/"
-	UserURL    string = "/user/regist"
+	UserURL    string = RootURL + "user"
+	UserRegistURL string = UserURL + "/regist"
+	UserEditURL string = UserURL + "/edit"
 	BookURL	   string = RootURL + "book"
 	BookDetailLURL string = BookURL + "/detail"
 	BookRegistURL string = BookURL + "/regist"
