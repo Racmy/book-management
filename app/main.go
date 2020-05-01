@@ -10,7 +10,6 @@ import (
 	"github.com/docker_go_nginx/app/handler/loginHandler"
 	"text/template"
 	"net/http"
-	"github.com/gorilla/mux"
 )
 
 var rootTemplatePath = "./template/"
@@ -95,42 +94,63 @@ func userPasswordRegist(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+
+func baseHandlerFunc(handler func(w http.ResponseWriter, r *http.Request)) http.Handler {
+    return baseHandler(http.HandlerFunc(handler))
+}
+
+func baseHandler(handler http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// common
+		_,err := ulogin.SessionCheck(w, r)
+		if err != nil {
+			//エラーの時
+			log.Println("session err")
+			http.Redirect(w,r,appconst.RootURL,http.StatusFound)
+		}else{
+			log.Println(r.URL, r.Method)
+			handler.ServeHTTP(w, r)
+		}
+        
+    })
+}
+
+
 // ルーティング
 func main() {
 	bookhandler.Tpl, _ = template.ParseGlob("./template/parts/*")
-	r := mux.NewRouter()
+
 	// ホーム画面のハンドラ
-	r.HandleFunc(appconst.RootURL, homeHandler)
+	http.Handle(appconst.RootURL, baseHandlerFunc(homeHandler))
 	// ユーザ登録のハンドラ
-	r.HandleFunc(appconst.UserRegistURL, userRegistHandler)
+	http.Handle(appconst.UserRegistURL, baseHandlerFunc(userRegistHandler))
 	// ユーザ登録情報の更新ハンドラ
-	r.HandleFunc(appconst.UserEditURL, userEditHandler)
+	http.Handle(appconst.UserEditURL, baseHandlerFunc(userEditHandler))
 	// ユーザパスワード再発行申込ハンドラ
-	r.HandleFunc(appconst.UserPassWordOrderURL, userPassWordOrderHandler)
+	http.Handle(appconst.UserPassWordOrderURL, baseHandlerFunc(userPassWordOrderHandler))
 	// ユーザパスワード再登録ハンドラ
-	r.HandleFunc(appconst.UserPassWordRegistURL, userPasswordRegist)
+	http.Handle(appconst.UserPassWordRegistURL, baseHandlerFunc(userPasswordRegist))
 	// 本一覧画面表示ハンドラ
-	r.HandleFunc(appconst.BookURL, bookhandler.BookListHandler)
+	http.Handle(appconst.BookURL, baseHandlerFunc(bookhandler.BookListHandler))
 	// 本登録画面表示ハンドラ
-	r.HandleFunc(appconst.BookRegistURL, bookhandler.BookRegistHandler)
+	http.Handle(appconst.BookRegistURL, baseHandlerFunc(bookhandler.BookRegistHandler))
 	// 本登録処理ハンドラ
-	r.HandleFunc(appconst.BookRegistProcessURL, bookhandler.BookInsertHandler)
+	http.Handle(appconst.BookRegistProcessURL, baseHandlerFunc(bookhandler.BookInsertHandler))
 	// 本登録結果画面表示ハンドラ
-	r.HandleFunc(appconst.BookRegistResultURL, bookhandler.BookInsertResultHandler)
+	http.Handle(appconst.BookRegistResultURL, baseHandlerFunc(bookhandler.BookInsertResultHandler))
 	// 本検索画面表示ハンドラ
-	r.HandleFunc(appconst.BookSearchURL, bookhandler.BookSearchHandler)
+	http.Handle(appconst.BookSearchURL, baseHandlerFunc(bookhandler.BookSearchHandler))
 	// 本詳細画面表示ハンドラ
-	r.HandleFunc(appconst.BookDetailLURL, bookhandler.BookDetailHandler)
+	http.Handle(appconst.BookDetailLURL, baseHandlerFunc(bookhandler.BookDetailHandler))
 	// 本更新処理ハンドラ
-	r.HandleFunc(appconst.BookUpdatehURL, bookhandler.BookUpdateHandler)
+	http.Handle(appconst.BookUpdatehURL, baseHandlerFunc(bookhandler.BookUpdateHandler))
 	// 本削除処理ハンドラ
-	r.HandleFunc(appconst.BookDeleteURL, bookhandler.BookDeleteHandler)
-	//r.HandleFunc(appconst.LoginURL,loginHandler.LoginHandler).Methods("GET")
-	r.HandleFunc(appconst.LoginURL,loginHandler.LoginHandler).Methods("POST")
+	http.Handle(appconst.BookDeleteURL, baseHandlerFunc(bookhandler.BookDeleteHandler))
+	// ログイン処理ハンドラ
+	http.Handle(appconst.LoginURL,baseHandlerFunc(loginHandler.LoginHandler))
 	// cssフレームワーク読み込み
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	// 画像フォルダ
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
-	http.Handle(appconst.RootURL, r)
 	http.ListenAndServe(":3000", nil)
 }

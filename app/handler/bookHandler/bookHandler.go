@@ -10,6 +10,7 @@ import (
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/db"
 	"github.com/docker_go_nginx/app/utility/ufile"
+	"github.com/docker_go_nginx/app/utility/ulogin"
 )
 
 var Tpl *template.Template
@@ -48,6 +49,7 @@ type BookRegistResponseData struct {
 	本を登録画面へのハンドラ
 */
 func BookRegistHandler(w http.ResponseWriter, r *http.Request) {
+	
 	Tpl.New(bookRegistHTMLName).ParseFiles(bookTemplatePath + bookRegistHTMLName)
 
 	errString := []string{}
@@ -89,6 +91,7 @@ func BookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	本を登録処理のハンドラ
 */
 func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
+	session, _:= ulogin.GetSession(r)
 	Tpl.New(bookRegistResultHTMLName).ParseFiles(bookTemplatePath + bookRegistResultHTMLName)
 
 	//表紙画像がuploadされたかどうかを判定するフラグの初期化
@@ -133,6 +136,7 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	insertBook := bookdao.Book{
+		UserID:		 session.Values[appconst.SessionUserID].(int),
 		Title:               title,
 		Author:              author,
 		LatestIssue:         latestIssue,
@@ -172,13 +176,16 @@ func BookInsertResultHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-	ホーム画面へのハンドラ
+	本棚画面へのハンドラ
 */
 func BookListHandler(w http.ResponseWriter, r *http.Request) {
-	
+	session,_ := ulogin.GetSession(r)
 	Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
+
+	userId := session.Values[appconst.SessionUserID].(int)
+
 	var responseData BookListResponseData
-	responseData.Books = bookdao.GetAllBooks()
+	responseData.Books = bookdao.GetAllBooksByUserID(userId)
 
 	query := r.URL.Query()
 	if query.Get("sucDelFlg") != "" {
@@ -226,6 +233,9 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 	本の検索のためのハンドラ
 */
 func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
+	session,_ := ulogin.GetSession(r)
+
+	userId := session.Values[appconst.SessionUserID].(int)
 
 	query := r.URL.Query()
 
@@ -240,7 +250,7 @@ func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
 		// ResponseDataの作成
 		var responseData BookListResponseData
 		responseData.Keyword = keyword
-		responseData.Books = bookdao.GetSearchedBooks(keyword)
+		responseData.Books = bookdao.GetSearchedBooksByKeywordAndUserID(keyword, userId)
 
 		if err := Tpl.ExecuteTemplate(w, bookListHTMLName, responseData); err != nil {
 			log.Fatal(err)
@@ -254,6 +264,9 @@ func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
 	本情報を更新するHandler
 */
 func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	session,_ := ulogin.GetSession(r)
+	userId := session.Values[appconst.SessionUserID].(int)
+
 	title := r.FormValue(bookdao.TITLE)
 	author := r.FormValue(bookdao.AUTHOR)
 	imgPath := r.FormValue(bookdao.IMGPATH)
@@ -310,7 +323,7 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		id, err := bookdao.UpdateBook(updateBook)
+		id, err := bookdao.UpdateBook(updateBook,userId)
 		idString := strconv.Itoa(id)
 
 		// 更新処理が失敗していない場合は、詳細画面へ遷移（bookDetail.html）
@@ -345,9 +358,13 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	/detail →　/book
 */
 func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	session,_ := ulogin.GetSession(r)
+
+	userId := session.Values[appconst.SessionUserID].(int)
+
 	r.ParseForm()
 	id := r.FormValue(bookdao.ID)
-	err := bookdao.DeleteBookByID(id)
+	err := bookdao.DeleteBookByIDAndUserID(id, userId)
 
 	var errMsg []string
 	// 削除失敗時は詳細画面へ遷移してエラーメッセージを表示

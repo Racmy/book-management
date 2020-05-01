@@ -1,11 +1,14 @@
 package ulogin
 
 import (
+	"log"
 	"net/http"
+	"errors"
 	"github.com/gorilla/sessions"
 	"github.com/docker_go_nginx/app/common/appstructure"
 	"github.com/docker_go_nginx/app/common/message"
 	"github.com/docker_go_nginx/app/db/UserDao"
+	"github.com/docker_go_nginx/app/common/appconst"
 )
 
 const (
@@ -38,7 +41,16 @@ func GetSession(r *http.Request) (*sessions.Session, error){
 	return store.Get(r,CookieName)
 }
 
-// func SessionCheck(){
-
-// }
+func SessionCheck(w http.ResponseWriter , r *http.Request) (*sessions.Session, error){
+	retSession, err := store.Get(r,CookieName)
+	if err != nil {
+		log.Println("SessionCheck err")
+		return retSession, err
+	} else{
+		if retSession.Values[appconst.SessionUserID] == nil || retSession.Values[appconst.SessionUserID].(int) <= 0 {
+			return nil, errors.New("no User ID")
+		}
+		return retSession, err
+	}
+}
 
