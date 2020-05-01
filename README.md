@@ -29,3 +29,6 @@ https://qiita.com/nyamazu/items/42802cde2baf9146788a
 
 ### Goのセッションの使い方の良さそうなサンプル
 https://qiita.com/yamoridon/items/d999e28bd576249b1d6e
+
+【サーバへの入り方】
+1. docker exec -it [containerID] /bin/bash
