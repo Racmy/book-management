@@ -4,7 +4,10 @@ import (
 	"log"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/docker_go_nginx/app/common/appconst"
+	"github.com/docker_go_nginx/app/common/appstructure"
+	"github.com/docker_go_nginx/app/utility/ulogin"
 	"github.com/docker_go_nginx/app/handler/bookHandler"
+	"github.com/docker_go_nginx/app/handler/loginHandler"
 	"text/template"
 	"net/http"
 	"github.com/gorilla/mux"
@@ -24,7 +27,23 @@ var userEditHTMLName = "edit.html"
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	Tpl, _ := template.ParseGlob("./template/parts/*")
 	Tpl.New(homeHTMLName).ParseFiles(homeTemplatePath + homeHTMLName)
-	if err := Tpl.ExecuteTemplate(w, homeHTMLName, nil); err != nil {
+	var errMsg appstructure.HomeErrorMessage
+	session, _ := ulogin.GetSession(r)
+
+	if errFlg := session.Values[appconst.SessionErrFlg]; errFlg!= nil && errFlg.(bool) == true{
+		if flashErrMsg := session.Flashes(appconst.SessionErrMsgEmail); len(flashErrMsg) > 0{
+			errMsg.EmailErr = flashErrMsg[0].(string)
+		}
+		if flashErrMsg := session.Flashes(appconst.SessionErrMsgPassword); len(flashErrMsg) > 0{
+			errMsg.PasswordErr = flashErrMsg[0].(string)
+		}
+		if flashErrMsg := session.Flashes(appconst.SessionErrMsgNoUser); len(flashErrMsg) > 0{
+			errMsg.NoUserErr = flashErrMsg[0].(string)
+		}
+	}
+	session.Save(r,w)
+	
+	if err := Tpl.ExecuteTemplate(w, homeHTMLName, errMsg); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -59,6 +78,7 @@ func main() {
 	r.HandleFunc(appconst.UserRegistURL, userRegistHandler)
 	r.HandleFunc(appconst.UserEditURL, userEditHandler)
 	r.HandleFunc(appconst.BookURL, bookhandler.BookListHandler)
+	r.HandleFunc(appconst.UserURL, userRegistHandler)
 	r.HandleFunc(appconst.BookRegistURL, bookhandler.BookRegistHandler)
 	r.HandleFunc(appconst.BookRegistProcessURL, bookhandler.BookInsertHandler)
 	r.HandleFunc(appconst.BookRegistResultURL, bookhandler.BookInsertResultHandler)
@@ -66,6 +86,8 @@ func main() {
 	r.HandleFunc(appconst.BookDetailLURL, bookhandler.BookDetailHandler)
 	r.HandleFunc(appconst.BookUpdatehURL, bookhandler.BookUpdateHandler)
 	r.HandleFunc(appconst.BookDeleteURL, bookhandler.BookDeleteHandler)
+	//r.HandleFunc(appconst.LoginURL,loginHandler.LoginHandler).Methods("GET")
+	r.HandleFunc(appconst.LoginURL,loginHandler.LoginHandler).Methods("POST")
 	// cssフレームワーク読み込み
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	// 画像フォルダ
