@@ -19,6 +19,8 @@ var homeHTMLName = "index.html"
 var userTemplatePath = rootTemplatePath + "user/"
 var userRegistHTMLName = "regist.html"
 var userEditHTMLName = "edit.html"
+var userPasswordOrderHTMLName = "password_order.html"
+var userPasswordRegistHTMLName = "password_regist.html"
 
 
 /*
@@ -70,21 +72,58 @@ func userEditHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*
+	ユーザのログインパスワード再発行
+*/
+func userPassWordOrderHandler(w http.ResponseWriter, r *http.Request) {
+	Tpl, _ := template.ParseGlob("./template/parts/*")
+	Tpl.New(userPasswordOrderHTMLName).ParseFiles(userTemplatePath + userPasswordOrderHTMLName)
+	if err := Tpl.ExecuteTemplate(w, userPasswordOrderHTMLName, nil); err != nil {
+		log.Fatal(err)
+	}
+}
+
+/*
+	ユーザのパスワード再登録画面
+*/
+func userPasswordRegist(w http.ResponseWriter, r *http.Request) {
+	Tpl, _ := template.ParseGlob("./template/parts/*")
+	log.Print("hoge")
+	Tpl.New(userPasswordRegistHTMLName).ParseFiles(userTemplatePath + userPasswordRegistHTMLName)
+	if err := Tpl.ExecuteTemplate(w, userPasswordRegistHTMLName, nil); err != nil {
+		log.Fatal(err)
+	}
+}
+
 // ルーティング
 func main() {
 	bookhandler.Tpl, _ = template.ParseGlob("./template/parts/*")
 	r := mux.NewRouter()
+	// ホーム画面のハンドラ
 	r.HandleFunc(appconst.RootURL, homeHandler)
+	// ユーザ登録のハンドラ
 	r.HandleFunc(appconst.UserRegistURL, userRegistHandler)
+	// ユーザ登録情報の更新ハンドラ
 	r.HandleFunc(appconst.UserEditURL, userEditHandler)
+	// ユーザパスワード再発行申込ハンドラ
+	r.HandleFunc(appconst.UserPassWordOrderURL, userPassWordOrderHandler)
+	// ユーザパスワード再登録ハンドラ
+	r.HandleFunc(appconst.UserPassWordRegistURL, userPasswordRegist)
+	// 本一覧画面表示ハンドラ
 	r.HandleFunc(appconst.BookURL, bookhandler.BookListHandler)
-	r.HandleFunc(appconst.UserURL, userRegistHandler)
+	// 本登録画面表示ハンドラ
 	r.HandleFunc(appconst.BookRegistURL, bookhandler.BookRegistHandler)
+	// 本登録処理ハンドラ
 	r.HandleFunc(appconst.BookRegistProcessURL, bookhandler.BookInsertHandler)
+	// 本登録結果画面表示ハンドラ
 	r.HandleFunc(appconst.BookRegistResultURL, bookhandler.BookInsertResultHandler)
+	// 本検索画面表示ハンドラ
 	r.HandleFunc(appconst.BookSearchURL, bookhandler.BookSearchHandler)
+	// 本詳細画面表示ハンドラ
 	r.HandleFunc(appconst.BookDetailLURL, bookhandler.BookDetailHandler)
+	// 本更新処理ハンドラ
 	r.HandleFunc(appconst.BookUpdatehURL, bookhandler.BookUpdateHandler)
+	// 本削除処理ハンドラ
 	r.HandleFunc(appconst.BookDeleteURL, bookhandler.BookDeleteHandler)
 	//r.HandleFunc(appconst.LoginURL,loginHandler.LoginHandler).Methods("GET")
 	r.HandleFunc(appconst.LoginURL,loginHandler.LoginHandler).Methods("POST")
