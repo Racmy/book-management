@@ -6,6 +6,8 @@ const (
 	UserURL    string = RootURL + "user"
 	UserRegistURL string = UserURL + "/regist"
 	UserEditURL string = UserURL + "/edit"
+	UserPassWordOrderURL string = UserURL + "/password_order"
+	UserPassWordRegistURL string = UserURL + "/password_regist"
 	BookURL	   string = RootURL + "book"
 	BookDetailLURL string = BookURL + "/detail"
 	BookRegistURL string = BookURL + "/regist"
