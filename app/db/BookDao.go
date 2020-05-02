@@ -2,6 +2,7 @@ package bookdao
 
 import (
 	"database/sql"
+	"github.com/docker_go_nginx/app/utility/uDB"
 	"log"
 	"strconv"
 	"time"
@@ -22,32 +23,14 @@ const (
 // Book D層とP層で本の情報を受け渡す構造体
 type Book struct {
 	ID                  int
-	User_ID				int
+	User_ID             int
 	Title               string
 	Author              string
 	LatestIssue         float64
 	FrontCoverImagePath string
-	active				string
-	Created_at			time.Time
-	Update_at			time.Time
-}
-
-
-func errCheck(err error) {
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
-/*
-	DBの初期化
-	input:
-	output:*sql.DB
-*/
-func dbSetUp() *sql.DB {
-	db, err := sql.Open("mysql", "racmy:racmy@tcp(db:3306)/book-management?parseTime=true")
-	errCheck(err)
-	return db
+	active              string
+	Created_at          time.Time
+	Update_at           time.Time
 }
 
 //GetBookByID ...BookテーブルのIDに紐つく情報を1件取得
@@ -57,7 +40,7 @@ func dbSetUp() *sql.DB {
 @return err error
 */
 func GetBookByID(id string) (Book, error) {
-	db := dbSetUp()
+	db := uDB.DbSetUp()
 	defer db.Close()
 	rows, err := db.Query("SELECT id, user_id, title, author, latest_issue, front_cover_image_path,active,created_at, update_at FROM book WHERE Id = ?", id)
 	defer rows.Close()
@@ -71,8 +54,8 @@ func GetBookByID(id string) (Book, error) {
 	//　本が検索できた場合は、本の情報を含めてリターン
 	var book Book
 	if rows.Next() {
-		err = rows.Scan(&book.ID, &book.User_ID , &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
-		errCheck(err)
+		err = rows.Scan(&book.ID, &book.User_ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
+		uDB.ErrCheck(err)
 		return book, err
 	}
 
@@ -86,16 +69,16 @@ input:
 output:[]Book
 */
 func GetAllBooks() []Book {
-	db := dbSetUp()
+	db := uDB.DbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
 	rows, err := db.Query("SELECT id, user_id, title, author, latest_issue, front_cover_image_path,active,created_at, update_at FROM book")
-	errCheck(err)
+	uDB.ErrCheck(err)
 	// Bookを格納するArray作成
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err = rows.Scan(&book.ID, &book.User_ID , &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
-		errCheck(err)
+		err = rows.Scan(&book.ID, &book.User_ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
+		uDB.ErrCheck(err)
 		books = append(books, book)
 	}
 	return books
@@ -108,21 +91,21 @@ func GetAllBooks() []Book {
 	output:error
 */
 func InsertBook(book Book) (int64, error) {
-	db := dbSetUp()
+	db := uDB.DbSetUp()
 	defer db.Close() // 関数がリターンする直前に呼び出される
 	var result sql.Result
 	if book.FrontCoverImagePath == "" {
 		ins, err := db.Prepare("INSERT INTO book (user_id,title,author,latest_issue) VALUES(?,?,?,?)")
-		errCheck(err)
+		uDB.ErrCheck(err)
 		// Bookを格納する
-		result, err = ins.Exec(1, &book.Title,&book.Author, &book.LatestIssue)
-		errCheck(err)
+		result, err = ins.Exec(1, &book.Title, &book.Author, &book.LatestIssue)
+		uDB.ErrCheck(err)
 	} else {
 		ins, err := db.Prepare("INSERT INTO book (user_id,title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?,?)")
-		errCheck(err)
+		uDB.ErrCheck(err)
 		// Bookを格納する
-		result, err = ins.Exec(1, &book.Title,&book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
-		errCheck(err)
+		result, err = ins.Exec(1, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
+		uDB.ErrCheck(err)
 	}
 	// Insertした結果を返す（id, error）
 	return result.LastInsertId()
@@ -136,7 +119,7 @@ func InsertBook(book Book) (int64, error) {
 */
 func GetSearchedBooks(keyword string) []Book {
 	keyword = "%" + keyword + "%"
-	db := dbSetUp()
+	db := uDB.DbSetUp()
 	defer db.Close()
 	rows, _ := db.Query("SELECT id, user_id, title, author, latest_issue, front_cover_image_path,active,created_at, update_at FROM book WHERE title LIKE ? OR author LIKE ?", keyword, keyword)
 	// errCheck(err)
@@ -144,8 +127,8 @@ func GetSearchedBooks(keyword string) []Book {
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err := rows.Scan(&book.ID, &book.User_ID , &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
-		errCheck(err)
+		err := rows.Scan(&book.ID, &book.User_ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
+		uDB.ErrCheck(err)
 		books = append(books, book)
 	}
 	return books
@@ -158,7 +141,7 @@ func GetSearchedBooks(keyword string) []Book {
 	output:bookid int, err error
 */
 func UpdateBook(book Book) (int, error) {
-	db := dbSetUp()
+	db := uDB.DbSetUp()
 	defer db.Close()
 
 	var err error = nil
@@ -169,7 +152,7 @@ func UpdateBook(book Book) (int, error) {
 	// 存在する場合は更新する
 	if err == nil {
 		upd, err := db.Prepare("UPDATE book SET title = ?, author = ?, latest_issue = ?, front_cover_image_path = ? WHERE id = ?")
-		errCheck(err)
+		uDB.ErrCheck(err)
 		_, err = upd.Exec(&book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.ID)
 
 		// 更新失敗時のエラー
@@ -196,7 +179,7 @@ func UpdateBook(book Book) (int, error) {
 	@return error 削除失敗時：nil
 */
 func DeleteBookByID(id string) error {
-	db := dbSetUp()
+	db := uDB.DbSetUp()
 	defer db.Close()
 	_, err := db.Query("DELETE FROM book WHERE id = ?", id)
 
