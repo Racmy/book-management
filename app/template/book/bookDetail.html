@@ -1,6 +1,6 @@
 {{template "header.html" .}}
     <!-- 本情報表示 -->
-    <main>
+    <main style="margin-left: 50px;">
         <form class="form-horizontal" action="/book/update" method="POST" enctype="multipart/form-data">
             <label>現在の画像</label>
             <div class="d-flex">
@@ -66,12 +66,10 @@
                 </div>
             </div>
         </form>
-
-        <form method="POST" action="/book/delete">
-            <input name="Id" type="hidden" value="{{.Book.ID}}">
-            <a href="/book" class="btn btn-secondary">戻る</a>
-            <button class="btn btn-danger" type="submit">削除する</button>
-        </form>
     </main>
-
+    <form method="POST" action="/book/delete">
+        <input name="Id" type="hidden" value="{{.Book.ID}}">
+        <a href="/book" class="btn btn-secondary">戻る</a>
+        <button class="btn btn-danger" type="submit">削除する</button>
+    </form>
 {{template "footer.html" .}}
