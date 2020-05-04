@@ -1,30 +1,32 @@
 package ulogin
 
 import (
-	"net/http"
-	"github.com/gorilla/sessions"
-	"github.com/docker_go_nginx/app/common/appstructure"
+	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/message"
-	"github.com/docker_go_nginx/app/db/UserDao"
+	"github.com/docker_go_nginx/app/db/userdao"
+	"github.com/gorilla/sessions"
+	"net/http"
 )
 
 const (
 	CookieName string = "cokkieName1"
 )
-var(
+
+var (
 	// キーの長さは 16, 24, 32 バイトのいずれかでなければならない。
-    // (AES-128, AES-192 or AES-256)
-    key = []byte("super-secret-key")
-    store = sessions.NewCookieStore(key)
+	// (AES-128, AES-192 or AES-256)
+	key   = []byte("super-secret-key")
+	store = sessions.NewCookieStore(key)
 )
+
 /**
-	ログインチェック
+ログインチェック
 */
-func LoginCheck(mailAddress string, password string) (appstructure.UserData ,string){
-	var responceUserData appstructure.UserData
+func LoginCheck(mailAddress string, password string) (userdao.User, string) {
+	var responceUserData userdao.User
 	var errMsg string
-	responceUserData, err := userdao.GetUserByEmailAndPass(mailAddress,password)
-	if err != nil{
+	responceUserData, err := userdao.GetUserByEmailAndPass(mailAddress, password)
+	if err != nil {
 		errMsg = message.ErrMsgServerErr
 	}
 	if responceUserData.ID == 0 {
@@ -34,11 +36,20 @@ func LoginCheck(mailAddress string, password string) (appstructure.UserData ,str
 
 }
 
-func GetSession(r *http.Request) (*sessions.Session, error){
-	return store.Get(r,CookieName)
+/**
+ログイン済みかチェック
+@param http.Request
+@return bool true：ログイン済、false：未ログイン
+*/
+func IsLogined(r *http.Request) bool {
+	session, _ := GetSession(r)
+	return session.Values[appconst.SessionLoginUser] != nil
+}
+
+func GetSession(r *http.Request) (*sessions.Session, error) {
+	return store.Get(r, CookieName)
 }
 
 // func SessionCheck(){
 
 // }
-

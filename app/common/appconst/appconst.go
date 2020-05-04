@@ -27,8 +27,9 @@ const (
 
 const (
 	// 俺用
-	SessionMsg      string = "Message"
-	SessionViewData string = "ViewData"
+	SessionMsg       string = "Message"
+	SessionViewData  string = "ViewData"
+	SessionLoginUser string = "LoginUser"
 
 	// 下、余田
 	SessionErrFlg         string = "SessionErrFlg"

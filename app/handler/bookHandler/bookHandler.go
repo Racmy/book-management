@@ -1,16 +1,16 @@
 package bookhandler
 
 import (
+	"github.com/docker_go_nginx/app/common/appconst"
+	"github.com/docker_go_nginx/app/common/message"
+	"github.com/docker_go_nginx/app/db/bookdao"
+	"github.com/docker_go_nginx/app/utility/ufile"
+	"github.com/docker_go_nginx/app/utility/ulogin"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
 	"text/template"
-	"github.com/docker_go_nginx/app/common/message"
-	"github.com/docker_go_nginx/app/common/appconst"
-	"github.com/docker_go_nginx/app/db"
-	"github.com/docker_go_nginx/app/utility/ufile"
-	"github.com/docker_go_nginx/app/utility/ulogin"
 )
 
 var Tpl *template.Template
@@ -24,10 +24,10 @@ var bookRegistResultHTMLName = "bookRegistResult.html"
 
 //BookDetailResponseData ...　本詳細画面用のレスポンスデータ
 type BookDetailResponseData struct {
-	Book   bookdao.Book
+	Book    bookdao.Book
 	NextURL string
-	ErrMsg []string
-	SucMsg []string
+	ErrMsg  []string
+	SucMsg  []string
 }
 
 // BookListResponseData ...　本一覧画面用のレスポンスデータ
@@ -99,31 +99,13 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	Tpl.New(bookRegistResultHTMLName).ParseFiles(bookTemplatePath + bookRegistResultHTMLName)
 
 	//表紙画像がuploadされたかどうかを判定するフラグの初期化
-	fileUploadFlag := true
 	frontCoverImagePath := ""
-	//表紙画像を格納する変数宣言
-	var file multipart.File
-	var fileHeader *multipart.FileHeader
-	// POSTされたファイルデータをメモリに格納
-	//33554432 約30MByte(8Kのping形式には耐えられない)
-	err := r.ParseMultipartForm(32 << 20)
-	if err != nil {
-		log.Println("【main.go bookInsertHandler】not ParseMultipartForm")
-		fileUploadFlag = false
-	} else {
-		file, fileHeader, err = r.FormFile(bookdao.IMGPATH)
-		if err != nil {
-			log.Println("【main.go bookInsertHandler】not file upload")
-			fileUploadFlag = false
-		}
-	}
+
+	// ファイルオブジェクトを取得
+	file, fileHeader, err := ufile.IsSetFile(r, bookdao.IMGPATH)
 	//表紙画像がuploadされている時
-	if fileUploadFlag {
+	if err == nil {
 		frontCoverImagePath, err = ufile.DefaultFileUpload(file, fileHeader.Filename)
-		if err != nil {
-			//ファイルアップロード失敗
-			fileUploadFlag = false
-		}
 	}
 
 	r.ParseForm()
@@ -154,9 +136,8 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idString := strconv.FormatInt(id, 10)
-	
 
-	http.Redirect(w, r, appconst.BookRegistResultURL + "?Id=" + idString, http.StatusFound)
+	http.Redirect(w, r, appconst.BookRegistResultURL+"?Id="+idString, http.StatusFound)
 
 }
 
@@ -182,7 +163,11 @@ func BookInsertResultHandler(w http.ResponseWriter, r *http.Request) {
 	ホーム画面へのハンドラ
 */
 func BookListHandler(w http.ResponseWriter, r *http.Request) {
-	
+	// 未ログインの場合はホームへリダイレクト
+	if !ulogin.IsLogined(r) {
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
+	}
+
 	Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
 	var responseData BookListResponseData
 	responseData.Books = bookdao.GetAllBooks()
