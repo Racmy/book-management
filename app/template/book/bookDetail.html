@@ -66,10 +66,10 @@
                 </div>
             </div>
         </form>
+        <form class="form-horizontal" method="POST" action="/book/delete">
+            <input name="Id" type="hidden" value="{{.Book.ID}}">
+            <a href="/book" class="btn btn-secondary">戻る</a>
+            <button class="btn btn-danger" type="submit">削除する</button>
+        </form>
     </main>
-    <form method="POST" action="/book/delete">
-        <input name="Id" type="hidden" value="{{.Book.ID}}">
-        <a href="/book" class="btn btn-secondary">戻る</a>
-        <button class="btn btn-danger" type="submit">削除する</button>
-    </form>
 {{template "footer.html" .}}

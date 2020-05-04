@@ -23,7 +23,7 @@ const (
 // Book D層とP層で本の情報を受け渡す構造体
 type Book struct {
 	ID                  int
-	User_ID             int
+	UserID              int
 	Title               string
 	Author              string
 	LatestIssue         float64
@@ -54,7 +54,38 @@ func GetBookByID(id string) (Book, error) {
 	//　本が検索できた場合は、本の情報を含めてリターン
 	var book Book
 	if rows.Next() {
-		err = rows.Scan(&book.ID, &book.User_ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
+		err = rows.Scan(&book.ID, &book.UserID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
+		uDB.ErrCheck(err)
+		return book, err
+	}
+
+	// 検索したが「０件」の場合は、book・errが共に空
+	return book, err
+}
+
+//GetBookByIDAndUserID ...BookテーブルのIDに紐つく情報を1件取得
+/*
+@param id string
+@param userid int
+@return book Book
+@return err error
+*/
+func GetBookByIDAndUserID(id string, userID int) (Book, error) {
+	db := uDB.DbSetUp()
+	defer db.Close()
+	rows, err := db.Query("SELECT id, user_id, title, author, latest_issue, front_cover_image_path,active,created_at, update_at FROM book WHERE Id = ? AND user_id = ?", id, userID)
+	defer rows.Close()
+
+	// SELECT失敗時にbookがerrorでのリターン
+	if err != nil {
+		log.Print("【BookDao.GetBookByID】id = " + id + "not exist in book table.")
+		return Book{}, err
+	}
+
+	//　本が検索できた場合は、本の情報を含めてリターン
+	var book Book
+	if rows.Next() {
+		err = rows.Scan(&book.ID, &book.UserID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
 		uDB.ErrCheck(err)
 		return book, err
 	}
@@ -77,7 +108,28 @@ func GetAllBooks() []Book {
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err = rows.Scan(&book.ID, &book.User_ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
+		err = rows.Scan(&book.ID, &book.UserID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
+		uDB.ErrCheck(err)
+		books = append(books, book)
+	}
+	return books
+}
+
+//GetAllBooks ...DB内のユーザの本をすべて取得
+/*
+input:
+output:[]Book
+*/
+func GetAllBooksByUserID(user_id int) []Book {
+	db := uDB.DbSetUp()
+	defer db.Close() // 関数がリターンする直前に呼び出される
+	rows, err := db.Query("SELECT id, user_id, title, author, latest_issue, front_cover_image_path,active,created_at, update_at FROM book WHERE user_id = ?", user_id)
+	uDB.ErrCheck(err)
+	// Bookを格納するArray作成
+	var books = []Book{}
+	for rows.Next() {
+		var book Book
+		err = rows.Scan(&book.ID, &book.UserID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
 		uDB.ErrCheck(err)
 		books = append(books, book)
 	}
@@ -98,13 +150,13 @@ func InsertBook(book Book) (int64, error) {
 		ins, err := db.Prepare("INSERT INTO book (user_id,title,author,latest_issue) VALUES(?,?,?,?)")
 		uDB.ErrCheck(err)
 		// Bookを格納する
-		result, err = ins.Exec(1, &book.Title, &book.Author, &book.LatestIssue)
+		result, err = ins.Exec(&book.UserID, &book.Title, &book.Author, &book.LatestIssue)
 		uDB.ErrCheck(err)
 	} else {
 		ins, err := db.Prepare("INSERT INTO book (user_id,title,author,latest_issue,front_cover_image_path) VALUES(?,?,?,?,?)")
 		uDB.ErrCheck(err)
 		// Bookを格納する
-		result, err = ins.Exec(1, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
+		result, err = ins.Exec(&book.UserID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath)
 		uDB.ErrCheck(err)
 	}
 	// Insertした結果を返す（id, error）
@@ -127,7 +179,31 @@ func GetSearchedBooks(keyword string) []Book {
 	var books = []Book{}
 	for rows.Next() {
 		var book Book
-		err := rows.Scan(&book.ID, &book.User_ID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
+		err := rows.Scan(&book.ID, &book.UserID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
+		uDB.ErrCheck(err)
+		books = append(books, book)
+	}
+	return books
+}
+
+// GetSearchedBooks ...キーワードから本情報を取得する
+/*
+	本をキーワードで検索する
+	input:keyword string
+	input:keyword int
+	output:[]Book
+*/
+func GetSearchedBooksByKeywordAndUserID(keyword string, userID int) []Book {
+	keyword = "%" + keyword + "%"
+	db := uDB.DbSetUp()
+	defer db.Close()
+	rows, _ := db.Query("SELECT id, user_id, title, author, latest_issue, front_cover_image_path,active,created_at, update_at FROM book WHERE user_id = ? AND (title LIKE ? OR author LIKE ?)", userID, keyword, keyword)
+	// errCheck(err)
+	// Bookを格納するArray作成
+	var books = []Book{}
+	for rows.Next() {
+		var book Book
+		err := rows.Scan(&book.ID, &book.UserID, &book.Title, &book.Author, &book.LatestIssue, &book.FrontCoverImagePath, &book.active, &book.Created_at, &book.Update_at)
 		uDB.ErrCheck(err)
 		books = append(books, book)
 	}
@@ -138,16 +214,16 @@ func GetSearchedBooks(keyword string) []Book {
 /*
 	本の更新
 	input:book Book
+	input:userID int
 	output:bookid int, err error
 */
-func UpdateBook(book Book) (int, error) {
+func UpdateBook(book Book, userID int) (int, error) {
 	db := uDB.DbSetUp()
 	defer db.Close()
 
 	var err error = nil
-
 	// DBに存在する確認する
-	_, err = GetBookByID(strconv.Itoa(book.ID))
+	_, err = GetBookByIDAndUserID(strconv.Itoa(book.ID), userID)
 
 	// 存在する場合は更新する
 	if err == nil {
@@ -176,12 +252,13 @@ func UpdateBook(book Book) (int, error) {
 /*
 	本の削除機能
 	@param id 本のID
+	@param userId ユーザのID
 	@return error 削除失敗時：nil
 */
-func DeleteBookByID(id string) error {
+func DeleteBookByIdAndUserId(id string, userId int) error {
 	db := uDB.DbSetUp()
 	defer db.Close()
-	_, err := db.Query("DELETE FROM book WHERE id = ?", id)
+	_, err := db.Query("DELETE FROM book WHERE id = ? and user_id = ?", id, userId)
 
 	if err != nil {
 		log.Print("【BookDao.DeleteBookByID】" + id + "error can't delete")

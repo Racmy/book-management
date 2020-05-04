@@ -116,6 +116,7 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	insertBook := bookdao.Book{
+		UserID:              ulogin.GetLoginUserId(r),
 		Title:               title,
 		Author:              author,
 		LatestIssue:         latestIssue,
@@ -154,7 +155,7 @@ func BookInsertResultHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-	ホーム画面へのハンドラ
+	本棚画面へのハンドラ
 */
 func BookListHandler(w http.ResponseWriter, r *http.Request) {
 	// 未ログインの場合はホームへリダイレクト
@@ -163,8 +164,11 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
+
+	userId := ulogin.GetLoginUserId(r)
+
 	var responseData BookListResponseData
-	responseData.Books = bookdao.GetAllBooks()
+	responseData.Books = bookdao.GetAllBooksByUserID(userId)
 
 	query := r.URL.Query()
 	if query.Get("sucDelFlg") != "" {
@@ -181,7 +185,6 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 	本詳細画面へのハンドラ
 */
 func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("hoge")
 	query := r.URL.Query()
 
 	if id := query.Get("Id"); query.Get("Id") != "" {
@@ -194,10 +197,8 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 		}
 
-		session, _ := ulogin.GetSession(r)
-		updated := session.Flashes(appconst.SessionFlg)[0].(bool)
 		//更新成功時のメッセージを格納
-		if updated {
+		if ulogin.GetSessionFlg(w, r) {
 			responseData.SucMsg = append(responseData.SucMsg, message.SucMsgUpdate)
 		}
 		Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
@@ -214,6 +215,7 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 	本の検索のためのハンドラ
 */
 func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
+	userId := ulogin.GetLoginUserId(r)
 
 	query := r.URL.Query()
 
@@ -228,7 +230,7 @@ func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
 		// ResponseDataの作成
 		var responseData BookListResponseData
 		responseData.Keyword = keyword
-		responseData.Books = bookdao.GetSearchedBooks(keyword)
+		responseData.Books = bookdao.GetSearchedBooksByKeywordAndUserID(keyword, userId)
 
 		if err := Tpl.ExecuteTemplate(w, bookListHTMLName, responseData); err != nil {
 			log.Fatal(err)
@@ -298,15 +300,19 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		id, err := bookdao.UpdateBook(updateBook)
+		// ログインユーザの取得
+		userId := ulogin.GetLoginUserId(r)
+
+		// 本の更新
+		id, err := bookdao.UpdateBook(updateBook, userId)
 		idString := strconv.Itoa(id)
 
 		// 更新処理が失敗していない場合は、詳細画面へ遷移（bookDetail.html）
 		var url string
 		if err == nil {
 			log.Print("【main.go　UpdateBookHander】success update")
-			// 成功したことをDetailに伝えるためにsucFlgをつける
 			url = appconst.BookDetailLURL + "?Id=" + idString
+			// 成功したセッションに成功フラグを立てる
 			session, _ := ulogin.GetSession(r)
 			session.AddFlash(true, appconst.SessionFlg)
 			session.Save(r, w)
@@ -336,9 +342,11 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	/detail →　/book
 */
 func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	userId := ulogin.GetLoginUserId(r)
+
 	r.ParseForm()
 	id := r.FormValue(bookdao.ID)
-	err := bookdao.DeleteBookByID(id)
+	err := bookdao.DeleteBookByIdAndUserId(id, userId)
 
 	var errMsg []string
 	// 削除失敗時は詳細画面へ遷移してエラーメッセージを表示

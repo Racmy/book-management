@@ -25,7 +25,6 @@ footer {
 /*headerのcss開始*/
 .navbar>.container-fluid {
     align-items: normal;
-    padding-bottom: 2000px;
 }
 
 #nav-info {

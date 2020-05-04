@@ -1,10 +1,12 @@
 package ulogin
 
 import (
+	"errors"
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/message"
 	"github.com/docker_go_nginx/app/db/userdao"
 	"github.com/gorilla/sessions"
+	"log"
 	"net/http"
 )
 
@@ -53,6 +55,19 @@ func GetSession(r *http.Request) (*sessions.Session, error) {
 	return store.Get(r, CookieName)
 }
 
+func SessionCheck(w http.ResponseWriter, r *http.Request) (*sessions.Session, error) {
+	retSession, err := store.Get(r, CookieName)
+	if err != nil {
+		log.Println("SessionCheck err")
+		return retSession, err
+	} else {
+		if retSession.Values[appconst.SessionLoginUser] == nil {
+			return nil, errors.New("no User ID")
+		}
+		return retSession, err
+	}
+}
+
 /*
 ログインユーザの取得
 */
@@ -60,4 +75,27 @@ func GetLoginUser(r *http.Request) userdao.User {
 	session, _ := GetSession(r)
 	user := session.Values[appconst.SessionLoginUser].(userdao.User)
 	return user
+}
+
+/*
+ログインユーザIDの取得
+*/
+func GetLoginUserId(r *http.Request) int {
+	session, _ := GetSession(r)
+	user := session.Values[appconst.SessionLoginUser].(userdao.User)
+	return int(user.ID)
+}
+
+/*
+登録・更新成功フラグがセッションに格納されているかの判定
+*/
+func GetSessionFlg(w http.ResponseWriter, r *http.Request) bool {
+	session, _ := GetSession(r)
+	sessionFlg := session.Flashes(appconst.SessionFlg)
+	session.Save(r, w)
+	if len(sessionFlg) > 0 {
+		log.Print(sessionFlg)
+		return sessionFlg[0].(bool)
+	}
+	return false
 }
