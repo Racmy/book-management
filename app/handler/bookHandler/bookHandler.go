@@ -49,10 +49,6 @@ type BookRegistResponseData struct {
 	本を登録画面へのハンドラ
 */
 func BookRegistHandler(w http.ResponseWriter, r *http.Request) {
-	session, err := ulogin.GetSession(r)
-	if err != nil {
-		log.Println("session err")
-	}
 	Tpl.New(bookRegistHTMLName).ParseFiles(bookTemplatePath + bookRegistHTMLName)
 
 	errString := []string{}
@@ -77,12 +73,10 @@ func BookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	if strConvErr != nil {
 		latestIssue = 1
 	}
-	userIP := session.Values[appconst.SessionUserImagePath].(string)
-	userName := session.Values[appconst.SessionUserName].(string)
 
 	responseData := BookRegistResponseData{
-		Title:       userIP,
-		Author:      userName,
+		Title:       title,
+		Author:      author,
 		LatestIssue: latestIssue,
 		ErrString:   errString,
 	}
@@ -200,8 +194,10 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 		}
 
+		session, _ := ulogin.GetSession(r)
+		updated := session.Flashes(appconst.SessionFlg)[0].(bool)
 		//更新成功時のメッセージを格納
-		if query.Get("sucFlg") != "" {
+		if updated {
 			responseData.SucMsg = append(responseData.SucMsg, message.SucMsgUpdate)
 		}
 		Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
@@ -310,7 +306,10 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			log.Print("【main.go　UpdateBookHander】success update")
 			// 成功したことをDetailに伝えるためにsucFlgをつける
-			url = appconst.BookDetailLURL + "?Id=" + idString + "&sucFlg=1"
+			url = appconst.BookDetailLURL + "?Id=" + idString
+			session, _ := ulogin.GetSession(r)
+			session.AddFlash(true, appconst.SessionFlg)
+			session.Save(r, w)
 			http.Redirect(w, r, url, http.StatusFound)
 		} else {
 			// 更新に失敗したことを、エラーメッセージにつめる

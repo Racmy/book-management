@@ -1,12 +1,14 @@
 package loginHandler
 
 import (
+	"encoding/gob"
+	"github.com/docker_go_nginx/app/common/appconst"
+	"github.com/docker_go_nginx/app/common/message"
+	"github.com/docker_go_nginx/app/db/userdao"
+	"github.com/docker_go_nginx/app/utility/ulogin"
 	"log"
 	"net/http"
 	"text/template"
-	"github.com/docker_go_nginx/app/common/appconst"
-	"github.com/docker_go_nginx/app/common/message"
-	"github.com/docker_go_nginx/app/utility/ulogin"
 )
 
 var Tpl *template.Template
@@ -28,47 +30,68 @@ var loginResultHTMLName = "testLoginResult.html"
 // }
 
 /**
-	ログインチェックのハンドラ
+ログインチェックのハンドラ
 */
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	session, err := ulogin.GetSession(r)
-	if err != nil {
-		log.Println("session err")
-	}
-	session.Values[appconst.SessionErrFlg] = false
+	// sessionにmap形式のデータを追加できるように設定
+	gob.Register(map[string][]string{})
+	gob.Register(map[string]string{})
+	gob.Register(userdao.User{})
+
 	Tpl, _ := template.ParseGlob("./template/parts/*")
 	Tpl.New(loginHTMLName).ParseFiles(loginTemplatePath + loginResultHTMLName)
 	email := r.FormValue(appconst.EMAIL)
 	password := r.FormValue(appconst.PASSWORD)
 	log.Println("email/pass:" + email + "/" + password)
-	if email == "" || password == ""{
-		session.Values[appconst.SessionErrFlg] = true
-		log.Println("test")
-		if (email == ""){
-			session.AddFlash(message.ErrMsgNoEmail,appconst.SessionErrMsgEmail)
-		}
-		if (password == ""){
-			session.AddFlash(message.ErrMsgNoPassword,appconst.SessionErrMsgPassword)
-		}
+	mailMsg := []string{}
+	passWordMsg := []string{}
+	if email == "" {
+		mailMsg = append(mailMsg, message.ErrMsgNoEmail)
+	}
+	if password == "" {
+		passWordMsg = append(passWordMsg, message.ErrMsgNoPassword)
+	}
+
+	errMsgMap := map[string][]string{}
+	viewData := map[string]string{}
+	if len(mailMsg) > 0 || len(passWordMsg) > 0 {
+		errMsgMap["mail"] = mailMsg
+		errMsgMap["password"] = passWordMsg
+		// sessionにmap形式のデータを追加できるように設定
+		gob.Register(map[string][]string{})
+		gob.Register(map[string]string{})
+
+		viewData["mail"] = email
+
+		// セッションにエラーメッセージと画面データをつめる
+		session, _ := ulogin.GetSession(r)
+		session.AddFlash(errMsgMap, appconst.SessionMsg)
+		session.AddFlash(viewData, appconst.SessionViewData)
+		session.Save(r, w)
+
+		// ログイン画面へ遷移
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
+	}
+
+	resUser, errMsg := ulogin.LoginCheck(email, password)
+	if errMsg != "" {
+		sokanMsg := []string{}
+		sokanMsg = append(sokanMsg, "ログインIDとパスワードに誤りがあります。")
+
+		errMsgMap["sokan"] = sokanMsg
+		viewData["mail"] = email
+		session, _ := ulogin.GetSession(r)
+		session.AddFlash(errMsgMap, appconst.SessionMsg)
+		session.AddFlash(viewData, appconst.SessionViewData)
 		session.Save(r, w)
 		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
-	} else{
-		resUser,ErrMsg := ulogin.LoginCheck(email,password)
-		if ErrMsg != ""{
-			session.Values[appconst.SessionErrFlg] = true
-			session.AddFlash(ErrMsg,appconst.SessionErrMsgNoUser)
-			session.Save(r, w)
-			http.Redirect(w, r, appconst.RootURL, http.StatusFound)
-		} else{
-			session.Values[appconst.SessionUserID] = resUser.ID
-			session.Values[appconst.SessionUserName] = resUser.Name
-			session.Values[appconst.SessionUserImagePath] = resUser.ImagePath
-			session.Save(r, w)
-			http.Redirect(w, r, appconst.BookURL, http.StatusFound)
-		}
 	}
-	
-	
+
+	// ログインセッションに登録
+	session, _ := ulogin.GetSession(r)
+	// セッションにデータにデータをつめる
+	session.Values[appconst.SessionLoginUser] = resUser
+	session.Save(r, w)
+	http.Redirect(w, r, appconst.BookURL, http.StatusFound)
+
 }
-
-

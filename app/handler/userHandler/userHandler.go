@@ -123,7 +123,7 @@ func UserRegistHandler(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, appconst.UserRegistURL, http.StatusFound)
 			}
 			//　ホーム画面遷移する
-			// // ログインセッションに登録
+			// ログインセッションに登録
 			gob.Register(userdao.User{})
 
 			// セッションにデータにデータをつめる
@@ -137,6 +137,11 @@ func UserRegistHandler(w http.ResponseWriter, r *http.Request) {
 		// Get・PUT・PATCH・DELETEなどできた場合は登録画面を表示
 		// ユーザ登録画面の表示
 		session, _ := ulogin.GetSession(r)
+		// 画面表示データ構造作成
+		responseData := UserRegistResponseData{
+			ViewData: map[string]string{},
+			Message:  nil,
+		}
 		Tpl.New(userRegistHTMLName).Option("missingkey=zero").ParseFiles(userTemplatePath + userRegistHTMLName)
 		if message := session.Flashes(appconst.SessionMsg); len(message) > 0 {
 			castedMessage := message[0].(map[string][]string)
@@ -144,26 +149,14 @@ func UserRegistHandler(w http.ResponseWriter, r *http.Request) {
 			session.Save(r, w)
 
 			// 画面表示データ構造作成
-			responseData := UserRegistResponseData{
+			responseData = UserRegistResponseData{
 				ViewData: viewData,
 				Message:  castedMessage,
 			}
-
-			if err := Tpl.ExecuteTemplate(w, userRegistHTMLName, responseData); err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			// 画面表示データ構造作成
-			responseData := UserRegistResponseData{
-				ViewData: map[string]string{},
-				Message:  nil,
-			}
-
-			if err := Tpl.ExecuteTemplate(w, userRegistHTMLName, responseData); err != nil {
-				log.Fatal(err)
-			}
 		}
-
+		if err := Tpl.ExecuteTemplate(w, userRegistHTMLName, responseData); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 

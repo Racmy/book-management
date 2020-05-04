@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/docker_go_nginx/app/common/appconst"
-	"github.com/docker_go_nginx/app/common/appstructure"
 	"github.com/docker_go_nginx/app/handler/bookHandler"
 	"github.com/docker_go_nginx/app/handler/loginHandler"
 	"github.com/docker_go_nginx/app/handler/userHandler"
@@ -18,29 +17,38 @@ var rootTemplatePath = "./template/"
 var homeTemplatePath = rootTemplatePath + "home/"
 var homeHTMLName = "index.html"
 
+// ホーム画面用の画面データ構造
+type HomeResponseData struct {
+	ViewData map[string]string
+	Message  map[string][]string
+}
+
 /*
 	ホーム画面を表示するハンドラ
 */
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	Tpl, _ := template.ParseGlob("./template/parts/*")
 	Tpl.New(homeHTMLName).ParseFiles(homeTemplatePath + homeHTMLName)
-	var errMsg appstructure.HomeErrorMessage
 	session, _ := ulogin.GetSession(r)
 
-	if errFlg := session.Values[appconst.SessionErrFlg]; errFlg != nil && errFlg.(bool) == true {
-		if flashErrMsg := session.Flashes(appconst.SessionErrMsgEmail); len(flashErrMsg) > 0 {
-			errMsg.EmailErr = flashErrMsg[0].(string)
-		}
-		if flashErrMsg := session.Flashes(appconst.SessionErrMsgPassword); len(flashErrMsg) > 0 {
-			errMsg.PasswordErr = flashErrMsg[0].(string)
-		}
-		if flashErrMsg := session.Flashes(appconst.SessionErrMsgNoUser); len(flashErrMsg) > 0 {
-			errMsg.NoUserErr = flashErrMsg[0].(string)
+	// 画面表示データ構造作成
+	responseData := HomeResponseData{
+		ViewData: map[string]string{},
+		Message:  nil,
+	}
+
+	if message := session.Flashes(appconst.SessionMsg); len(message) > 0 {
+		castedMessage := message[0].(map[string][]string)
+		viewData := session.Flashes(appconst.SessionViewData)[0].(map[string]string)
+		session.Save(r, w)
+		// 画面表示データ構造作成
+		responseData = HomeResponseData{
+			ViewData: viewData,
+			Message:  castedMessage,
 		}
 	}
-	session.Save(r, w)
 
-	if err := Tpl.ExecuteTemplate(w, homeHTMLName, errMsg); err != nil {
+	if err := Tpl.ExecuteTemplate(w, homeHTMLName, responseData); err != nil {
 		log.Fatal(err)
 	}
 }

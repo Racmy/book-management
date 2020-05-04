@@ -26,17 +26,8 @@ const (
 )
 
 const (
-	// 俺用
-	SessionMsg       string = "Message"
-	SessionViewData  string = "ViewData"
-	SessionLoginUser string = "LoginUser"
-
-	// 下、余田
-	SessionErrFlg         string = "SessionErrFlg"
-	SessionUserID         string = "SessionUserID"
-	SessionUserName       string = "SessionUserName"
-	SessionUserImagePath  string = "sessionUserImagePath"
-	SessionErrMsgEmail    string = "emailNil"
-	SessionErrMsgPassword string = "passwordlNil"
-	SessionErrMsgNoUser   string = "noUser"
+	SessionMsg       string = "Message"   //メッセージ格納用のキー
+	SessionViewData  string = "ViewData"  //画面データ格納用のキー
+	SessionLoginUser string = "LoginUser" //ログインユーザ格納用のキー
+	SessionFlg       string = "Flg"       //登録・更新処理の成功フラグ格納用のキー
 )

@@ -46,10 +46,18 @@ func IsLogined(r *http.Request) bool {
 	return session.Values[appconst.SessionLoginUser] != nil
 }
 
+/*
+セションの取得
+*/
 func GetSession(r *http.Request) (*sessions.Session, error) {
 	return store.Get(r, CookieName)
 }
 
-// func SessionCheck(){
-
-// }
+/*
+ログインユーザの取得
+*/
+func GetLoginUser(r *http.Request) userdao.User {
+	session, _ := GetSession(r)
+	user := session.Values[appconst.SessionLoginUser].(userdao.User)
+	return user
+}
