@@ -3,13 +3,16 @@ package uDB
 import (
 	"database/sql"
 	"log"
+	"os"
 )
+
 /**
-	エラーチェック
+エラーチェック
 */
 func ErrCheck(err error) {
 	if err != nil {
 		log.Println(err.Error())
+		os.Exit(1)
 	}
 }
 

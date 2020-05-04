@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -16,13 +17,11 @@ const TimeFormat = "2006-01-02_15-04-05"
 /*
 	ファイルをサーバへアップロードする関数
 
-	input:
-		file mulipart.File		: saved file
-		filePath string			: saved file path
-		fileName string			: saved file path
-	output:
-		string				: fileName(with path)
-		err					: err
+	@param 	file 				mulipart.File
+	@param 	filePath 			string
+	@param 	fileName 			string
+	@return fileName(with path) string
+	@return err					error
 */
 func FileUpload(file multipart.File, filePath string, fileName string) (string, error) {
 	savedFilePath := filePath
@@ -41,14 +40,9 @@ func FileUpload(file multipart.File, filePath string, fileName string) (string, 
 
 /*
 	ファイルをサーバへアップロードする関数
-
-	input:
-		file mulipart.File		: saved file
-		fileName string
-		fileType int				: saved file type
-			1:表示画像用
-	output:
-		err					: err
+	@param file 	mulipart.File
+	@param fileName string
+	@param err		err
 */
 func DefaultFileUpload(file multipart.File, fileName string) (string, error) {
 	return FileUpload(file, defaultFileUploadPath, fileName)
@@ -56,12 +50,9 @@ func DefaultFileUpload(file multipart.File, fileName string) (string, error) {
 
 /*
 	ファイルをサーバへ保存する関数
-
-	input:
-		file mulipart.File		: saved file
-		fileName string			: saved file name(with path)
-	output:
-		err					: err
+	@param file 	mulipart.File
+	@param fileName string
+	@return err		err
 */
 func fileSaved(file multipart.File, fileName string) error {
 	log.Println("saved file name : " + fileName)
@@ -85,4 +76,34 @@ func fileSaved(file multipart.File, fileName string) error {
 	}
 	log.Printf("File Saved data size:" + strconv.FormatInt(size, 10))
 	return nil
+}
+
+/*
+	画像がRequestに格納されているか判定する
+	メモリに画像を格納する
+	@param 	request http.Request
+	@param  name    string
+	@return file    multipart.File
+	@return fileHeader multipart.FileHeader
+	@return err		error
+*/
+func IsSetFile(request *http.Request, name string) (multipart.File, *multipart.FileHeader, error) {
+	var file multipart.File
+	var fileHeader *multipart.FileHeader
+	file = nil
+	fileHeader = nil
+	// POSTされたファイルデータをメモリに格納
+	//33554432 約30MByte(8Kのping形式には耐えられない)
+	err := request.ParseMultipartForm(32 << 20)
+	if err != nil {
+		log.Println("not ParseMultipartForm")
+	} else {
+		file, fileHeader, err = request.FormFile(name)
+		if err != nil {
+			log.Println("not file upload")
+		}
+	}
+
+	return file, fileHeader, err
+
 }

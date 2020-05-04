@@ -12,16 +12,28 @@
                         <div class="myform form-group row">
                             <label for="id_input" class="col-md-3">ID</label>
                             <input id="id_input"class="form-control col-md-9" type="text" name="MailAddress" value="" placeholder="登録時のメールアドレスを入力してください。">
-                            <p class="text-danger">{{.EmailErr}}</p>
+                            {{ if .Message.mail}}
+                                {{ range .Message.mail }}
+                                    <p class="text-danger">{{.}}</p>
+                                {{ end }}
+                            {{ end }}
                         </div>
                         <div class="myform form-group row">
                             <label for="pw_input" class="col-md-3">パスワード</label>
                             <input id="pw_input" class="form-control col-md-9" type="password" name="Password" value="" placeholder="">
-                            <p class="text-danger">{{.PasswordErr}}</p>
+                            {{ if .Message.password}}
+                                {{ range .Message.password }}
+                                    <p class="text-danger">{{.}}</p>
+                                {{ end }}
+                            {{ end }}
+                            {{ if .Message.sokan}}
+                                {{ range .Message.sokan }}
+                                    <p class="text-danger">{{.}}</p>
+                                {{ end }}
+                            {{ end }}
                         </div>
-                        <p class="text-danger">{{.NoUserErr}}</p>
                         <button type="submit" id="login-button" class="form-control">ログイン</button>
-                        <a id="new-account-link" href="#">新規アカウントの作成</a>
+                        <a id="new-account-link" href="/user/regist">新規アカウントの作成</a>
                     </div>
                 </form>
             </div>

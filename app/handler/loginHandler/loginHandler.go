@@ -1,12 +1,14 @@
 package loginHandler
 
 import (
+	"encoding/gob"
+	"github.com/docker_go_nginx/app/common/appconst"
+	"github.com/docker_go_nginx/app/common/message"
+	"github.com/docker_go_nginx/app/db/userdao"
+	"github.com/docker_go_nginx/app/utility/ulogin"
 	"log"
 	"net/http"
 	"text/template"
-	"github.com/docker_go_nginx/app/common/appconst"
-	"github.com/docker_go_nginx/app/common/message"
-	"github.com/docker_go_nginx/app/utility/ulogin"
 )
 
 var Tpl *template.Template
@@ -16,59 +18,81 @@ var loginTemplatePath = rootTemplatePath + "login/"
 var loginHTMLName = "testLogin.html"
 var loginResultHTMLName = "testLoginResult.html"
 
-// /**
-// 	ログイン画面へのハンドラ
-// */
-// func LoginHandler(w http.ResponseWriter, r *http.Request) {
-// 	Tpl, _ := template.ParseGlob("./template/parts/*")
-// 	Tpl.New(loginHTMLName).ParseFiles(loginTemplatePath + loginHTMLName)
-// 	if err := Tpl.ExecuteTemplate(w, loginHTMLName, nil); err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
-
 /**
-	ログインチェックのハンドラ
+ログインチェックのハンドラ
 */
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	session, err := ulogin.GetSession(r)
-	if err != nil {
-		log.Println("session err")
-	}
-	session.Values[appconst.SessionErrFlg] = false
+	// sessionにmap形式のデータを追加できるように設定
+	gob.Register(map[string][]string{})
+	gob.Register(map[string]string{})
+	gob.Register(userdao.User{})
+	// テンプレート前処理
 	Tpl, _ := template.ParseGlob("./template/parts/*")
 	Tpl.New(loginHTMLName).ParseFiles(loginTemplatePath + loginResultHTMLName)
+
+	// クライアントからのデータ取得
 	email := r.FormValue(appconst.EMAIL)
 	password := r.FormValue(appconst.PASSWORD)
 	log.Println("email/pass:" + email + "/" + password)
-	if email == "" || password == ""{
-		session.Values[appconst.SessionErrFlg] = true
-		log.Println("test")
-		if (email == ""){
-			session.AddFlash(message.ErrMsgNoEmail,appconst.SessionErrMsgEmail)
-		}
-		if (password == ""){
-			session.AddFlash(message.ErrMsgNoPassword,appconst.SessionErrMsgPassword)
-		}
-		session.Save(r, w)
-		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
-	} else{
-		resUser,ErrMsg := ulogin.LoginCheck(email,password)
-		if ErrMsg != ""{
-			session.Values[appconst.SessionErrFlg] = true
-			session.AddFlash(ErrMsg,appconst.SessionErrMsgNoUser)
-			session.Save(r, w)
-			http.Redirect(w, r, appconst.RootURL, http.StatusFound)
-		} else{
-			session.Values[appconst.SessionUserID] = resUser.ID
-			session.Values[appconst.SessionUserName] = resUser.Name
-			session.Values[appconst.SessionUserImagePath] = resUser.ImagePath
-			session.Save(r, w)
-			http.Redirect(w, r, appconst.BookURL, http.StatusFound)
-		}
+
+	// エラーメッセージ格納用の変数作成
+	mailMsg := []string{}
+	passWordMsg := []string{}
+
+	// メールアドレスとパスワードの空文字チェック
+	if email == "" {
+		mailMsg = append(mailMsg, message.ErrMsgNoEmail)
 	}
-	
-	
+	if password == "" {
+		passWordMsg = append(passWordMsg, message.ErrMsgNoPassword)
+	}
+
+	// セッションにつめる、エラーメッセージと画面データ格納用の変数作成
+	errMsgMap := map[string][]string{}
+	viewData := map[string]string{}
+
+	// メールアドレスとパスワードにおいて、入力チェックで不正と判断された場合はリダイレクト
+	if len(mailMsg) > 0 || len(passWordMsg) > 0 {
+		// エラーメッセージを格納
+		errMsgMap["mail"] = mailMsg
+		errMsgMap["password"] = passWordMsg
+		// 画面データを格納
+		viewData["mail"] = email
+
+		// セッションにエラーメッセージと画面データをつめる
+		session, _ := ulogin.GetSession(r)
+		session.AddFlash(errMsgMap, appconst.SessionMsg)
+		session.AddFlash(viewData, appconst.SessionViewData)
+		session.Save(r, w)
+
+		// ログイン画面へ遷移
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
+	}
+
+	resUser, errMsg := ulogin.LoginCheck(email, password)
+	// 一致するユーザIDとパスワードが存在するかチェック
+	if errMsg != "" {
+		// エラーメッセージを作成
+		sokanMsg := []string{}
+		sokanMsg = append(sokanMsg, "ログインIDとパスワードに誤りがあります。")
+		errMsgMap["sokan"] = sokanMsg
+		viewData["mail"] = email
+
+		// セッションにエラーメッセージと画面データをつめる
+		session, _ := ulogin.GetSession(r)
+		session.AddFlash(errMsgMap, appconst.SessionMsg)
+		session.AddFlash(viewData, appconst.SessionViewData)
+		session.Save(r, w)
+
+		// ホーム画面へリダイレクト
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
+	}
+
+	// ログインセッションに登録
+	session, _ := ulogin.GetSession(r)
+	// セッションにデータにデータをつめる
+	session.Values[appconst.SessionLoginUser] = resUser
+	session.Save(r, w)
+	http.Redirect(w, r, appconst.BookURL, http.StatusFound)
+
 }
-
-

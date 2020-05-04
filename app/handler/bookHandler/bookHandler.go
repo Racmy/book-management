@@ -1,15 +1,16 @@
 package bookhandler
 
 import (
+	"github.com/docker_go_nginx/app/common/appconst"
+	"github.com/docker_go_nginx/app/common/message"
+	"github.com/docker_go_nginx/app/db/bookdao"
+	"github.com/docker_go_nginx/app/utility/ufile"
+	"github.com/docker_go_nginx/app/utility/ulogin"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
 	"text/template"
-	"github.com/docker_go_nginx/app/common/message"
-	"github.com/docker_go_nginx/app/common/appconst"
-	"github.com/docker_go_nginx/app/db"
-	"github.com/docker_go_nginx/app/utility/ufile"
 )
 
 var Tpl *template.Template
@@ -23,10 +24,10 @@ var bookRegistResultHTMLName = "bookRegistResult.html"
 
 //BookDetailResponseData ...　本詳細画面用のレスポンスデータ
 type BookDetailResponseData struct {
-	Book   bookdao.Book
+	Book    bookdao.Book
 	NextURL string
-	ErrMsg []string
-	SucMsg []string
+	ErrMsg  []string
+	SucMsg  []string
 }
 
 // BookListResponseData ...　本一覧画面用のレスポンスデータ
@@ -92,31 +93,13 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	Tpl.New(bookRegistResultHTMLName).ParseFiles(bookTemplatePath + bookRegistResultHTMLName)
 
 	//表紙画像がuploadされたかどうかを判定するフラグの初期化
-	fileUploadFlag := true
 	frontCoverImagePath := ""
-	//表紙画像を格納する変数宣言
-	var file multipart.File
-	var fileHeader *multipart.FileHeader
-	// POSTされたファイルデータをメモリに格納
-	//33554432 約30MByte(8Kのping形式には耐えられない)
-	err := r.ParseMultipartForm(32 << 20)
-	if err != nil {
-		log.Println("【main.go bookInsertHandler】not ParseMultipartForm")
-		fileUploadFlag = false
-	} else {
-		file, fileHeader, err = r.FormFile(bookdao.IMGPATH)
-		if err != nil {
-			log.Println("【main.go bookInsertHandler】not file upload")
-			fileUploadFlag = false
-		}
-	}
+
+	// ファイルオブジェクトを取得
+	file, fileHeader, err := ufile.IsSetFile(r, bookdao.IMGPATH)
 	//表紙画像がuploadされている時
-	if fileUploadFlag {
+	if err == nil {
 		frontCoverImagePath, err = ufile.DefaultFileUpload(file, fileHeader.Filename)
-		if err != nil {
-			//ファイルアップロード失敗
-			fileUploadFlag = false
-		}
 	}
 
 	r.ParseForm()
@@ -133,6 +116,7 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	insertBook := bookdao.Book{
+		UserID:              ulogin.GetLoginUserId(r),
 		Title:               title,
 		Author:              author,
 		LatestIssue:         latestIssue,
@@ -147,9 +131,8 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idString := strconv.FormatInt(id, 10)
-	
 
-	http.Redirect(w, r, appconst.BookRegistResultURL + "?Id=" + idString, http.StatusFound)
+	http.Redirect(w, r, appconst.BookRegistResultURL+"?Id="+idString, http.StatusFound)
 
 }
 
@@ -172,16 +155,22 @@ func BookInsertResultHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-	ホーム画面へのハンドラ
+	本棚画面へのハンドラ
 */
 func BookListHandler(w http.ResponseWriter, r *http.Request) {
-	
-	Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
-	var responseData BookListResponseData
-	responseData.Books = bookdao.GetAllBooks()
+	// 未ログインの場合はホームへリダイレクト
+	if !ulogin.IsLogined(r) {
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
+	}
 
-	query := r.URL.Query()
-	if query.Get("sucDelFlg") != "" {
+	Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
+
+	userId := ulogin.GetLoginUserId(r)
+
+	var responseData BookListResponseData
+	responseData.Books = bookdao.GetAllBooksByUserID(userId)
+
+	if ulogin.GetSessionFlg(w, r) {
 		responseData.SucMsg = append(responseData.SucMsg, message.SucMsgDel)
 	}
 
@@ -195,7 +184,6 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 	本詳細画面へのハンドラ
 */
 func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
-
 	query := r.URL.Query()
 
 	if id := query.Get("Id"); query.Get("Id") != "" {
@@ -209,7 +197,7 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//更新成功時のメッセージを格納
-		if query.Get("sucFlg") != "" {
+		if ulogin.GetSessionFlg(w, r) {
 			responseData.SucMsg = append(responseData.SucMsg, message.SucMsgUpdate)
 		}
 		Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
@@ -226,6 +214,7 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 	本の検索のためのハンドラ
 */
 func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
+	userId := ulogin.GetLoginUserId(r)
 
 	query := r.URL.Query()
 
@@ -240,7 +229,7 @@ func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
 		// ResponseDataの作成
 		var responseData BookListResponseData
 		responseData.Keyword = keyword
-		responseData.Books = bookdao.GetSearchedBooks(keyword)
+		responseData.Books = bookdao.GetSearchedBooksByKeywordAndUserID(keyword, userId)
 
 		if err := Tpl.ExecuteTemplate(w, bookListHTMLName, responseData); err != nil {
 			log.Fatal(err)
@@ -310,15 +299,20 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		id, err := bookdao.UpdateBook(updateBook)
+		// ログインユーザの取得
+		userId := ulogin.GetLoginUserId(r)
+
+		// 本の更新
+		id, err := bookdao.UpdateBook(updateBook, userId)
 		idString := strconv.Itoa(id)
 
 		// 更新処理が失敗していない場合は、詳細画面へ遷移（bookDetail.html）
 		var url string
 		if err == nil {
 			log.Print("【main.go　UpdateBookHander】success update")
-			// 成功したことをDetailに伝えるためにsucFlgをつける
-			url = appconst.BookDetailLURL + "?Id=" + idString + "&sucFlg=1"
+			url = appconst.BookDetailLURL + "?Id=" + idString
+			// 成功したセッションに成功フラグを立てる
+			ulogin.SetSessionFlg(w, r)
 			http.Redirect(w, r, url, http.StatusFound)
 		} else {
 			// 更新に失敗したことを、エラーメッセージにつめる
@@ -345,9 +339,11 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	/detail →　/book
 */
 func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	userId := ulogin.GetLoginUserId(r)
+
 	r.ParseForm()
 	id := r.FormValue(bookdao.ID)
-	err := bookdao.DeleteBookByID(id)
+	err := bookdao.DeleteBookByIdAndUserId(id, userId)
 
 	var errMsg []string
 	// 削除失敗時は詳細画面へ遷移してエラーメッセージを表示
@@ -366,7 +362,8 @@ func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// 削除失敗時は本詳細画面へ遷移
 	} else {
-		url := appconst.BookURL + "?sucDelFlg=1"
-		http.Redirect(w, r, url, http.StatusFound)
+		// セッションフラグをONにする
+		ulogin.SetSessionFlg(w, r)
+		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 	}
 }

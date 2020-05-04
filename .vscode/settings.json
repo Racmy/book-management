@@ -1,0 +1,16 @@
+{
+    "go.buildOnSave": "off",
+    "go.formatTool": "gofmt",
+    "sqltools.connections": [
+        {
+            "connectionTimeout": 100,
+            "database": "book-management",
+            "dialect": "MySQL",
+            "name": "book-management",
+            "password": "racmy",
+            "port": 3306,
+            "server": "localhost",
+            "username": "racmy"
+        }
+    ]
+}
