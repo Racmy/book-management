@@ -87,7 +87,7 @@ func GetLoginUserId(r *http.Request) int {
 }
 
 /*
-登録・更新成功フラグがセッションに格納されているかの判定
+登録・更新・削除成功フラグがセッションに格納されているかの判定
 */
 func GetSessionFlg(w http.ResponseWriter, r *http.Request) bool {
 	session, _ := GetSession(r)
@@ -98,4 +98,13 @@ func GetSessionFlg(w http.ResponseWriter, r *http.Request) bool {
 		return sessionFlg[0].(bool)
 	}
 	return false
+}
+
+/*
+登録・更新・削除成功フラグをtrueにする
+*/
+func SetSessionFlg(w http.ResponseWriter, r *http.Request) {
+	session, _ := GetSession(r)
+	session.AddFlash(true, appconst.SessionFlg)
+	session.Save(r, w)
 }

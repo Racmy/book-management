@@ -170,8 +170,7 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 	var responseData BookListResponseData
 	responseData.Books = bookdao.GetAllBooksByUserID(userId)
 
-	query := r.URL.Query()
-	if query.Get("sucDelFlg") != "" {
+	if ulogin.GetSessionFlg(w, r) {
 		responseData.SucMsg = append(responseData.SucMsg, message.SucMsgDel)
 	}
 
@@ -313,9 +312,7 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			log.Print("【main.go　UpdateBookHander】success update")
 			url = appconst.BookDetailLURL + "?Id=" + idString
 			// 成功したセッションに成功フラグを立てる
-			session, _ := ulogin.GetSession(r)
-			session.AddFlash(true, appconst.SessionFlg)
-			session.Save(r, w)
+			ulogin.SetSessionFlg(w, r)
 			http.Redirect(w, r, url, http.StatusFound)
 		} else {
 			// 更新に失敗したことを、エラーメッセージにつめる
@@ -365,7 +362,8 @@ func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// 削除失敗時は本詳細画面へ遷移
 	} else {
-		url := appconst.BookURL + "?sucDelFlg=1"
-		http.Redirect(w, r, url, http.StatusFound)
+		// セッションフラグをONにする
+		ulogin.SetSessionFlg(w, r)
+		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 	}
 }
