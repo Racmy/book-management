@@ -18,17 +18,6 @@ var loginTemplatePath = rootTemplatePath + "login/"
 var loginHTMLName = "testLogin.html"
 var loginResultHTMLName = "testLoginResult.html"
 
-// /**
-// 	ログイン画面へのハンドラ
-// */
-// func LoginHandler(w http.ResponseWriter, r *http.Request) {
-// 	Tpl, _ := template.ParseGlob("./template/parts/*")
-// 	Tpl.New(loginHTMLName).ParseFiles(loginTemplatePath + loginHTMLName)
-// 	if err := Tpl.ExecuteTemplate(w, loginHTMLName, nil); err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
-
 /**
 ログインチェックのハンドラ
 */
@@ -37,14 +26,20 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	gob.Register(map[string][]string{})
 	gob.Register(map[string]string{})
 	gob.Register(userdao.User{})
-
+	// テンプレート前処理
 	Tpl, _ := template.ParseGlob("./template/parts/*")
 	Tpl.New(loginHTMLName).ParseFiles(loginTemplatePath + loginResultHTMLName)
+
+	// クライアントからのデータ取得
 	email := r.FormValue(appconst.EMAIL)
 	password := r.FormValue(appconst.PASSWORD)
 	log.Println("email/pass:" + email + "/" + password)
+
+	// エラーメッセージ格納用の変数作成
 	mailMsg := []string{}
 	passWordMsg := []string{}
+
+	// メールアドレスとパスワードの空文字チェック
 	if email == "" {
 		mailMsg = append(mailMsg, message.ErrMsgNoEmail)
 	}
@@ -52,15 +47,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		passWordMsg = append(passWordMsg, message.ErrMsgNoPassword)
 	}
 
+	// セッションにつめる、エラーメッセージと画面データ格納用の変数作成
 	errMsgMap := map[string][]string{}
 	viewData := map[string]string{}
+
+	// メールアドレスとパスワードにおいて、入力チェックで不正と判断された場合はリダイレクト
 	if len(mailMsg) > 0 || len(passWordMsg) > 0 {
+		// エラーメッセージを格納
 		errMsgMap["mail"] = mailMsg
 		errMsgMap["password"] = passWordMsg
-		// sessionにmap形式のデータを追加できるように設定
-		gob.Register(map[string][]string{})
-		gob.Register(map[string]string{})
-
+		// 画面データを格納
 		viewData["mail"] = email
 
 		// セッションにエラーメッセージと画面データをつめる
@@ -74,16 +70,21 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resUser, errMsg := ulogin.LoginCheck(email, password)
+	// 一致するユーザIDとパスワードが存在するかチェック
 	if errMsg != "" {
+		// エラーメッセージを作成
 		sokanMsg := []string{}
 		sokanMsg = append(sokanMsg, "ログインIDとパスワードに誤りがあります。")
-
 		errMsgMap["sokan"] = sokanMsg
 		viewData["mail"] = email
+
+		// セッションにエラーメッセージと画面データをつめる
 		session, _ := ulogin.GetSession(r)
 		session.AddFlash(errMsgMap, appconst.SessionMsg)
 		session.AddFlash(viewData, appconst.SessionViewData)
 		session.Save(r, w)
+
+		// ホーム画面へリダイレクト
 		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 	}
 

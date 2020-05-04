@@ -181,7 +181,7 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 	本詳細画面へのハンドラ
 */
 func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
-
+	log.Println("hoge")
 	query := r.URL.Query()
 
 	if id := query.Get("Id"); query.Get("Id") != "" {
