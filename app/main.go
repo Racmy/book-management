@@ -4,11 +4,11 @@ import (
 	"log"
 	"net/http"
 	"text/template"
-
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/processTemplate"
 	"github.com/docker_go_nginx/app/handler/authHandler"
 	"github.com/docker_go_nginx/app/handler/userHandler"
+	"github.com/docker_go_nginx/app/handler/bookHandler"
 	"github.com/docker_go_nginx/app/utility/ulogin"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -55,7 +55,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 // ルーティング
 func main() {
-	bookhandler.Tpl, _ = template.ParseGlob("./template/parts/*")
+	bookHandler.Tpl, _ = template.ParseGlob("./template/parts/*")
 
 	// ホーム画面のハンドラ
 	http.Handle(appconst.RootURL, processTemplate.BaseHandlerFunc(homeHandler, 0))
@@ -68,21 +68,21 @@ func main() {
 	// ユーザパスワード再登録ハンドラ
 	http.Handle(appconst.UserPassWordRegistURL, processTemplate.BaseHandlerFunc(userHandler.UserPasswordRegist, 0))
 	// 本一覧画面表示ハンドラ
-	http.Handle(appconst.BookURL, processTemplate.BaseHandlerFunc(bookhandler.BookListHandler, 1))
+	http.Handle(appconst.BookURL, processTemplate.BaseHandlerFunc(bookHandler.BookListHandler, 1))
 	// 本登録画面表示ハンドラ
-	http.Handle(appconst.BookRegistURL, processTemplate.BaseHandlerFunc(bookhandler.BookRegistHandler, 1))
+	http.Handle(appconst.BookRegistURL, processTemplate.BaseHandlerFunc(bookHandler.BookRegistHandler, 1))
 	// 本登録処理ハンドラ
-	http.Handle(appconst.BookRegistProcessURL, processTemplate.BaseHandlerFunc(bookhandler.BookInsertHandler, 1))
+	http.Handle(appconst.BookRegistProcessURL, processTemplate.BaseHandlerFunc(bookHandler.BookInsertHandler, 1))
 	// 本登録結果画面表示ハンドラ
-	http.Handle(appconst.BookRegistResultURL, processTemplate.BaseHandlerFunc(bookhandler.BookInsertResultHandler, 1))
+	http.Handle(appconst.BookRegistResultURL, processTemplate.BaseHandlerFunc(bookHandler.BookInsertResultHandler, 1))
 	// 本検索画面表示ハンドラ
-	http.Handle(appconst.BookSearchURL, processTemplate.BaseHandlerFunc(bookhandler.BookSearchHandler, 1))
+	http.Handle(appconst.BookSearchURL, processTemplate.BaseHandlerFunc(bookHandler.BookSearchHandler, 1))
 	// 本詳細画面表示ハンドラ
-	http.Handle(appconst.BookDetailLURL, processTemplate.BaseHandlerFunc(bookhandler.BookDetailHandler, 1))
+	http.Handle(appconst.BookDetailLURL, processTemplate.BaseHandlerFunc(bookHandler.BookDetailHandler, 1))
 	// 本更新処理ハンドラ
-	http.Handle(appconst.BookUpdatehURL, processTemplate.BaseHandlerFunc(bookhandler.BookUpdateHandler, 1))
+	http.Handle(appconst.BookUpdatehURL, processTemplate.BaseHandlerFunc(bookHandler.BookUpdateHandler, 1))
 	// 本削除処理ハンドラ
-	http.Handle(appconst.BookDeleteURL, processTemplate.BaseHandlerFunc(bookhandler.BookDeleteHandler, 1))
+	http.Handle(appconst.BookDeleteURL, processTemplate.BaseHandlerFunc(bookHandler.BookDeleteHandler, 1))
 	// ログイン処理ハンドラ
 	http.Handle(appconst.LoginURL, processTemplate.BaseHandlerFunc(authHandler.LoginHandler, 0))
 	// ログアウト処理ハンドラ

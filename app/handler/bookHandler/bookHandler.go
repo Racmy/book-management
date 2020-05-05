@@ -1,4 +1,4 @@
-package bookhandler
+package bookHandler
 
 import (
 	"github.com/docker_go_nginx/app/common/appconst"
