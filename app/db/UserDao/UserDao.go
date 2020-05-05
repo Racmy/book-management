@@ -148,10 +148,10 @@ func InsertUser(user User) (User, error) {
 	return user, err
 }
 
-//insertUser ...ユーザの登録
+//UpdateUser ...ユーザの更新
 /*
-@param User　ユーザID未セット
-@return User ユーザIDセット済
+@param User　更新内容の入ったユーザ
+@return User 更新後のユーザ
 */
 func UpdateUser(user User) (User, error) {
 	db := uDB.DbSetUp()
