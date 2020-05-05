@@ -116,3 +116,8 @@ func SetSessionFlg(w http.ResponseWriter, r *http.Request) {
 	session.AddFlash(true, appconst.SessionFlg)
 	session.Save(r, w)
 }
+
+func DelSession(w http.ResponseWriter, r *http.Request){
+	session := sessions.NewSession(store, CookieName)
+	session.Save(r, w)
+}

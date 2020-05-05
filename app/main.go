@@ -4,7 +4,7 @@ import (
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/processTemplate"
 	"github.com/docker_go_nginx/app/handler/bookHandler"
-	"github.com/docker_go_nginx/app/handler/loginHandler"
+	"github.com/docker_go_nginx/app/handler/authHandler"
 	"github.com/docker_go_nginx/app/handler/userHandler"
 	"github.com/docker_go_nginx/app/utility/ulogin"
 	_ "github.com/go-sql-driver/mysql"
@@ -85,7 +85,9 @@ func main() {
 	// 本削除処理ハンドラ
 	http.Handle(appconst.BookDeleteURL, processTemplate.BaseHandlerFunc(bookhandler.BookDeleteHandler, 1))
 	// ログイン処理ハンドラ
-	http.Handle(appconst.LoginURL, processTemplate.BaseHandlerFunc(loginHandler.LoginHandler, 0))
+	http.Handle(appconst.LoginURL, processTemplate.BaseHandlerFunc(authHandler.LoginHandler, 0))
+	// ログアウト処理ハンドラ
+	http.Handle(appconst.LogoutURL, processTemplate.BaseHandlerFunc(authHandler.LogoutHandler, 0))
 	// cssフレームワーク読み込み
 	http.Handle("/node_modules/", http.StripPrefix("/node_modules/", http.FileServer(http.Dir("node_modules/"))))
 	// 画像フォルダ
