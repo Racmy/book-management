@@ -9,6 +9,13 @@
                 </div>
                 <form class="col-sm-6" action = "/login" method="POST">
                     <div>
+                        {{ if .Message.nosession}}
+                                {{ range .Message.nosession }}
+                                    <div class="myform form-group row">
+                                        <p class="text-danger">{{.}}</p>
+                                    </div>
+                                {{ end }}
+                            {{ end }}
                         <div class="myform form-group row">
                             <label for="id_input" class="col-md-3">ID</label>
                             <input id="id_input"class="form-control col-md-9" type="text" name="MailAddress" value="" placeholder="登録時のメールアドレスを入力してください。">
