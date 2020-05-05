@@ -4,7 +4,6 @@ import (
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/message"
 	"github.com/docker_go_nginx/app/db/bookdao"
-	"github.com/docker_go_nginx/app/utility/uDB"
 	"github.com/docker_go_nginx/app/utility/ufile"
 	"github.com/docker_go_nginx/app/utility/ulogin"
 	"log"
@@ -50,37 +49,10 @@ type BookRegistResponseData struct {
 	本を登録画面へのハンドラ
 */
 func BookRegistHandler(w http.ResponseWriter, r *http.Request) {
-	Tpl.New(bookRegistHTMLName).ParseFiles(bookTemplatePath + bookRegistHTMLName)
+	Tpl.New(bookRegistHTMLName).Option("missingkey=zero").ParseFiles(bookTemplatePath + bookRegistHTMLName)
 
-	errString := []string{}
-	title := r.FormValue(bookdao.TITLE)
-	author := r.FormValue(bookdao.AUTHOR)
-	latestIssueString := r.FormValue(bookdao.LatestIssue)
-	latestIssue, strConvErr := strconv.ParseFloat(latestIssueString, 64)
-	tmpErrCheckFlag := r.FormValue("ErrCheckFlag")
-
-	if tmpErrCheckFlag == "1" {
-		if title == "" {
-			errString = append(errString, message.ErrMsgTitleNull)
-		}
-		if author == "" {
-			errString = append(errString, message.ErrMsgAuthNull)
-		}
-		if strConvErr != nil {
-			errString = append(errString, message.ErrMsgLiNull)
-		}
-	}
-
-	if strConvErr != nil {
-		latestIssue = 1
-	}
-
-	responseData := BookRegistResponseData{
-		Title:       title,
-		Author:      author,
-		LatestIssue: latestIssue,
-		ErrString:   errString,
-	}
+	//　セッションから画面表示データを取得
+	responseData := ulogin.GetViewDataAndMessage(w, r)
 
 	if err := Tpl.ExecuteTemplate(w, bookRegistHTMLName, responseData); err != nil {
 		log.Fatal(err)
@@ -96,16 +68,18 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	//表紙画像がuploadされたかどうかを判定するフラグの初期化
 	frontCoverImagePath := ""
 
-	// ファイルオブジェクトを取得
-	file, fileHeader, err := ufile.ParseFile(r, bookdao.IMGPATH)
-	uDB.ErrCheck(err)
-
 	//表紙画像がuploadされている時
 	userId, err := ulogin.GetLoginUserId(r)
 	if err != nil {
 		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 	}
-	frontCoverImagePath, err = ufile.UserFileUpload(file, fileHeader.Filename, userId)
+
+	// ファイルオブジェクトを取得
+	file, fileHeader, err := ufile.ParseFile(r, bookdao.IMGPATH)
+
+	if file != nil {
+		frontCoverImagePath, err = ufile.UserFileUpload(file, fileHeader.Filename, userId)
+	}
 
 	r.ParseForm()
 
@@ -114,10 +88,43 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	latestIssueString := r.Form[bookdao.LatestIssue][0]
 	latestIssue, strConvErr := strconv.ParseFloat(latestIssueString, 64)
 
-	if (title == "") || (author == "") || (strConvErr != nil) {
-		var url = appconst.BookRegistURL
-		url += "?Title=" + title + "&Author=" + author + "&bookdao.LatestIssue=" + latestIssueString + "&ErrCheckFlag=1"
-		http.Redirect(w, r, url, http.StatusFound)
+	titleMsg := []string{}
+	authorMsg := []string{}
+	latestIssueMsg := []string{}
+
+	// 入力チェック
+	if title == "" {
+		titleMsg = append(titleMsg, "タイトルを入力してください。")
+	}
+	if author == "" {
+		authorMsg = append(authorMsg, "著者を入力してください。")
+	}
+	if strConvErr != nil {
+		latestIssueMsg = append(latestIssueMsg, "巻数の形式に誤りがあります。")
+	}
+
+	log.Println("hogehoge")
+
+	errMsgMap := map[string][]string{}
+	viewData := map[string]string{}
+	if len(titleMsg) > 0 || len(authorMsg) > 0 || len(latestIssueMsg) > 0 {
+		errMsgMap["title"] = titleMsg
+		errMsgMap["author"] = authorMsg
+		errMsgMap["latestIssue"] = latestIssueMsg
+
+		// 画面データ格納
+		viewData["title"] = title
+		viewData["author"] = author
+		viewData["latestIssue"] = latestIssueString
+
+		// セッションにエラーメッセージと画面データをつめる
+		session, _ := ulogin.GetSession(r)
+		session.AddFlash(errMsgMap, appconst.SessionMsg)
+		session.AddFlash(viewData, appconst.SessionViewData)
+		session.Save(r, w)
+
+		// ログイン画面へ遷移
+		http.Redirect(w, r, appconst.BookRegistURL, http.StatusFound)
 	}
 
 	userId, getLoginUserErr := ulogin.GetLoginUserId(r)
@@ -142,7 +149,6 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	idString := strconv.FormatInt(id, 10)
 
 	http.Redirect(w, r, appconst.BookRegistResultURL+"?Id="+idString, http.StatusFound)
-
 }
 
 /*
