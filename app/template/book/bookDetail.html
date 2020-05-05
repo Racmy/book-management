@@ -4,47 +4,58 @@
         <form class="form-horizontal" action="/book/update" method="POST" enctype="multipart/form-data">
             <label>現在の画像</label>
             <div class="d-flex">
-                <img class="img-thumbnail col-6" style="max-height: 400px;" src="{{.Book.FrontCoverImagePath}}">
+                <img class="img-thumbnail col-6" style="max-height: 400px;" src="{{.ViewData.imagePath}}">
                 <div id="preview" class="img-thumbnail col-6" style="max-height: 400px;"></div>
             </div>
-            <input name="Id" type="hidden" value="{{.Book.ID}}">
-            <input name="FrontCoverImagePath" type="hidden" value="{{.Book.FrontCoverImagePath}}">
+            <input name="Id" type="hidden" value="{{.ViewData.Id}}">
+            <input name="FrontCoverImagePath" type="hidden" value="{{.ViewData.imagePath}}">
 
-            {{ if .ErrMsg}}
-                <div class="alert alert-danger" role="alert">
-                    <ul>
-                    {{range $msg := .ErrMsg}}
-                    <li>{{$msg}}</li>
-                    {{end}}
-                    </ul>
-                </div>
-            {{ end }}
-
-            {{ if .SucMsg}}
+            {{ if .Message.success}}
+                {{ range .Message.success }}
                 <div class="alert alert-success" role="alert">
-                    <ul>
-                    {{range $msg := .SucMsg}}
-                    <li>{{$msg}}</li>
-                    {{end}}
-                    </ul>
+                    <p class="text-success">{{.}}</p>
                 </div>
+                {{ end }}
             {{ end }}
+
+
             <div class="form-group">
                 <label class="col-3 control-label">※タイトル：</label>
                 <div class="col-8">
-                    <input class="form-control" 　type="text" name="Title" value="{{.Book.Title}}">
+                    <input class="form-control" 　type="text" name="Title" value="{{.ViewData.title}}">
+                    {{ if .Message.title}}
+                        {{ range .Message.title }}
+                        <div class="myform form-group row">
+                            <p class="text-danger">{{.}}</p>
+                        </div>
+                        {{ end }}
+                    {{ end }}
                 </div>
             </div>
             <div class="form-group">
                 <label class="col-3 control-label">※著者：</label>
                 <div class="col-8">
-                    <input class="form-control" 　type="text" name="Author" value="{{.Book.Author}}">
+                    <input class="form-control" 　type="text" name="Author" value="{{.ViewData.author}}">
+                    {{ if .Message.author}}
+                        {{ range .Message.author }}
+                        <div class="myform form-group row">
+                            <p class="text-danger">{{.}}</p>
+                        </div>
+                        {{ end }}
+                    {{ end }}
                 </div>
             </div>
             <div class="form-group">
                 <label class="col-3 control-label">※所持最新巻数：</label>
                 <div class="col-8">
-                    <input class="form-control" type="tel" name="LatestIssue" value="{{.Book.LatestIssue}}">
+                    <input class="form-control" type="tel" name="LatestIssue" value="{{.ViewData.latestIssue}}">
+                    {{ if .Message.latestIssue}}
+                        {{ range .Message.latestIssue }}
+                        <div class="myform form-group row">
+                            <p class="text-danger">{{.}}</p>
+                        </div>
+                        {{ end }}
+                    {{ end }}
                 </div>
             </div>
             <div class="form-group">
@@ -67,7 +78,7 @@
             </div>
         </form>
         <form class="form-horizontal" method="POST" action="/book/delete">
-            <input name="Id" type="hidden" value="{{.Book.ID}}">
+            <input name="Id" type="hidden" value="{{.ViewData.ID}}">
             <a href="/book" class="btn btn-secondary">戻る</a>
             <button class="btn btn-danger" type="submit">削除する</button>
         </form>

@@ -2,8 +2,10 @@ package bookhandler
 
 import (
 	"github.com/docker_go_nginx/app/common/appconst"
+	"github.com/docker_go_nginx/app/common/appstructure"
 	"github.com/docker_go_nginx/app/common/message"
 	"github.com/docker_go_nginx/app/db/bookdao"
+	"github.com/docker_go_nginx/app/utility/uDB"
 	"github.com/docker_go_nginx/app/utility/ufile"
 	"github.com/docker_go_nginx/app/utility/ulogin"
 	"log"
@@ -21,14 +23,6 @@ var bookListHTMLName = "bookList.html"
 var bookDetailHTMLName = "bookDetail.html"
 var bookRegistHTMLName = "bookRegist.html"
 var bookRegistResultHTMLName = "bookRegistResult.html"
-
-//BookDetailResponseData ...　本詳細画面用のレスポンスデータ
-type BookDetailResponseData struct {
-	Book    bookdao.Book
-	NextURL string
-	ErrMsg  []string
-	SucMsg  []string
-}
 
 // BookListResponseData ...　本一覧画面用のレスポンスデータ
 type BookListResponseData struct {
@@ -103,8 +97,6 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		latestIssueMsg = append(latestIssueMsg, "巻数の形式に誤りがあります。")
 	}
 
-	log.Println("hogehoge")
-
 	errMsgMap := map[string][]string{}
 	viewData := map[string]string{}
 	if len(titleMsg) > 0 || len(authorMsg) > 0 || len(latestIssueMsg) > 0 {
@@ -123,7 +115,7 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		session.AddFlash(viewData, appconst.SessionViewData)
 		session.Save(r, w)
 
-		// ログイン画面へ遷移
+		// 本登録画面へ遷移
 		http.Redirect(w, r, appconst.BookRegistURL, http.StatusFound)
 	}
 
@@ -201,30 +193,57 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 	本詳細画面へのハンドラ
 */
 func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
+	// 更新失敗のハンドリング後の場合はそのデータを利用する
+	responseData := ulogin.GetViewDataAndMessage(w, r)
 
-	if id := query.Get("Id"); query.Get("Id") != "" {
-		// 画面からIdを取得し、DBから紐つくデータを取得
-		var responseData BookDetailResponseData
-		var err error
-		responseData.Book, err = bookdao.GetBookByID(id)
-		// データ取得失敗時はホームへ戻す
-		if err != nil {
-			http.Redirect(w, r, appconst.BookURL, http.StatusFound)
-		}
-
-		//更新成功時のメッセージを格納
-		if ulogin.GetSessionFlg(w, r) {
-			responseData.SucMsg = append(responseData.SucMsg, message.SucMsgUpdate)
-		}
+	// 初回ではない場合はセッションのデータを表示
+	// 更新失敗→本詳細の遷移
+	if len(responseData.ViewData) != 0 {
+		log.Println("piyo")
+		log.Print(responseData)
 		Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
 		if err := Tpl.ExecuteTemplate(w, bookDetailHTMLName, responseData); err != nil {
 			log.Fatal(err)
 		}
 	} else {
+		// クエリの取得
+		query := r.URL.Query()
+		//　初回時
+		if id := query.Get("Id"); query.Get("Id") != "" {
+			log.Print("fuga")
+			// 画面からIdを取得し、DBから紐つくデータを取得
+			book, err := bookdao.GetBookByID(id)
+			// データ取得失敗時はホームへ戻す
+			if err != nil {
+				http.Redirect(w, r, appconst.BookURL, http.StatusFound)
+			}
+
+			viewData := map[string]string{}
+			viewData["Id"] = strconv.Itoa(book.ID)
+			viewData["title"] = book.Title
+			viewData["author"] = book.Author
+			viewData["latestIssue"] = strconv.FormatFloat(book.LatestIssue, 'f', 1, 64)
+			viewData["imagePath"] = book.FrontCoverImagePath
+
+			/**
+			更新完了のメッセージがある場合は取得する
+			*/
+			var message map[string][]string
+			if len(responseData.Message["success"]) > 0 {
+				message = responseData.Message
+			}
+
+			responseData = appstructure.CreateResponseData(viewData, message)
+			log.Println(responseData)
+			Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
+			if err := Tpl.ExecuteTemplate(w, bookDetailHTMLName, responseData); err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		// クエリにIDがない場合は本一覧にリダイレクト
 		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 	}
-
 }
 
 /*
@@ -291,20 +310,48 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var errMsg []string
-	/*エラーチェック【相談】登録との共通化*/
+	titleMsg := []string{}
+	authorMsg := []string{}
+	latestIssueMsg := []string{}
+
+	// 入力チェック
 	if title == "" {
-		errMsg = append(errMsg, message.ErrMsgTitleNull)
+		titleMsg = append(titleMsg, "タイトルを入力してください。")
 	}
 	if author == "" {
-		errMsg = append(errMsg, message.ErrMsgAuthNull)
+		authorMsg = append(authorMsg, "著者を入力してください。")
 	}
 	if strConvErr != nil {
-		errMsg = append(errMsg, message.ErrMsgLiNull)
+		latestIssueMsg = append(latestIssueMsg, "巻数の形式に誤りがあります。")
 	}
 
-	// 入力エラーがない場合は更新処理を実施
-	if len(errMsg) == 0 {
+	errMsgMap := map[string][]string{}
+	viewData := map[string]string{}
+	if len(titleMsg) > 0 || len(authorMsg) > 0 || len(latestIssueMsg) > 0 {
+		errMsgMap["title"] = titleMsg
+		errMsgMap["author"] = authorMsg
+		errMsgMap["latestIssue"] = latestIssueMsg
+
+		// 画面データ格納
+		log.Print("hohoho")
+		log.Println(id)
+		viewData["Id"] = id
+		viewData["title"] = title
+		viewData["author"] = author
+		viewData["latestIssue"] = latestIssueString
+		viewData["imagePath"] = imgPath
+
+		// セッションにエラーメッセージと画面データをつめる
+		session, _ := ulogin.GetSession(r)
+		session.AddFlash(errMsgMap, appconst.SessionMsg)
+		session.AddFlash(viewData, appconst.SessionViewData)
+		session.Save(r, w)
+
+		// 本登録画面へ遷移
+		url := appconst.BookDetailLURL + "?Id=" + id
+		http.Redirect(w, r, url, http.StatusFound)
+	} else {
+		// 入力エラーがない場合は更新処理を実施
 		// 入力データで更新
 		updateBook := bookdao.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue, FrontCoverImagePath: imgPath}
 		// 本画像の登録
@@ -325,36 +372,34 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 		}
 
-		// 本の更新
-		id, err := bookdao.UpdateBook(updateBook, userId)
-		idString := strconv.Itoa(id)
+		log.Println("hoge")
+		log.Println(updateBook.ID)
 
+		// 本の更新
+		updatedBookId, errUpd := bookdao.UpdateBook(updateBook, userId)
+		log.Println(updatedBookId)
+		// 本の更新に失敗チェック
+		uDB.ErrCheck(errUpd)
+		idString := strconv.Itoa(updatedBookId)
+		log.Print(idString)
 		// 更新処理が失敗していない場合は、詳細画面へ遷移（bookDetail.html）
 		var url string
-		if err == nil {
-			log.Print("【main.go　UpdateBookHander】success update")
-			url = appconst.BookDetailLURL + "?Id=" + idString
-			// 成功したセッションに成功フラグを立てる
-			ulogin.SetSessionFlg(w, r)
-			http.Redirect(w, r, url, http.StatusFound)
-		} else {
-			// 更新に失敗したことを、エラーメッセージにつめる
-			errMsg = append(errMsg, message.ErrMsgServerErr)
-		}
+		log.Print("【main.go　UpdateBookHander】success update")
+		url = appconst.BookDetailLURL + "?Id=" + idString
+
+		message := map[string][]string{}
+		sucMessage := []string{}
+		sucMessage = append(sucMessage, "本の更新が完了しました。")
+		// 成功したセッションに成功フラグを立てる
+		message["success"] = sucMessage
+		// セッションにエラーメッセージと画面データをつめる
+		session, _ := ulogin.GetSession(r)
+		session.AddFlash(message, appconst.SessionMsg)
+		session.Save(r, w)
+
+		http.Redirect(w, r, url, http.StatusFound)
 	}
 
-	// 以下、入力ミス・更新失敗時の処理
-	log.Print("【main.go　UpdateBookHander】invalid input value or fail update")
-	Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
-	// エラー時は、画面から送られてきたデータを渡す
-	inputBook := bookdao.Book{ID: idInt, Title: title, Author: author, LatestIssue: latestIssue, FrontCoverImagePath: imgPath}
-
-	// 画面に表示するデータを格納
-	responseData := BookDetailResponseData{Book: inputBook, ErrMsg: errMsg}
-
-	if err := Tpl.ExecuteTemplate(w, bookDetailHTMLName, responseData); err != nil {
-		log.Fatal(err)
-	}
 }
 
 /*
@@ -371,22 +416,12 @@ func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue(bookdao.ID)
 	err = bookdao.DeleteBookByIdAndUserId(id, userId)
 
-	var errMsg []string
 	// 削除失敗時は詳細画面へ遷移してエラーメッセージを表示
 	if err != nil {
 		// エラーの表示
 		log.Fatal("【main.go bookDeleteHandler】本の削除に失敗しました。")
-		// 表示用のデータ準備
-		Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
-		errMsg = append(errMsg, message.ErrMsgDelErr)
-		// 画面に表示するデータを格納
-		targetBook, _ := bookdao.GetBookByID(id)
-		responseData := BookDetailResponseData{Book: targetBook, ErrMsg: errMsg}
-		err := Tpl.ExecuteTemplate(w, bookDetailHTMLName, responseData)
-		if err != nil {
-			log.Fatal("【main.go bookDeleteHandler】画面の描画中にエラーが発生しました。")
-		}
-		// 削除失敗時は本詳細画面へ遷移
+		//TODO削除失敗メッセージを出す
+		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 	} else {
 		// セッションフラグをONにする
 		ulogin.SetSessionFlg(w, r)
