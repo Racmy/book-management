@@ -1,25 +1,56 @@
 {{template "header.html" .}}
     <!-- ホーム画面 -->
     <main id="regist">
-        <form>
+        <form method="post" action="/user/edit" enctype="multipart/form-data">
             <div id="regist-box" class="col-md-8 col-sm-11">
                 <div id="regist-box-container">
                     <h2 class="myform-group  mb-5">アカウント更新</h2>
+                    {{ if .Message.sucMsg}}
+                            {{ range .Message.sucMsg }}
+                                <p class="text-danger">{{.}}</p>
+                            {{ end }}
+                    {{ end }}
                     <div class="myform-group mb-4">
                         <label for="mail">メールアドレス</label>
-                        <input id="mail" type="text" placeholder="">
+                        <input id="mail" type="text" name="mail" placeholder="" value="{{ .ViewData.mail}}">
+                        {{ if .Message.mail}}
+                            {{ range .Message.mail }}
+                                <p class="text-danger">{{.}}</p>
+                            {{ end }}
+                        {{ end }}
                     </div>
                     <div class="myform-group  mb-4">
                         <label for="name">ユーザ名</label>
-                        <input id="name" type="text" placeholder="">
+                        <input id="name" type="text" name="name" placeholder="" value="{{ .ViewData.name}}">
+                        {{ if .Message.name}}
+                            {{ range .Message.name }}
+                                <p class="text-danger">{{.}}</p>
+                            {{ end }}
+                        {{ end }}
                     </div>
                     <div class="myform-group  mb-4">
+                        <!-- パスワード一致メッセージ -->
+                        {{ if .Message.sokanCheck}}
+                            {{ range .Message.sokanCheck }}
+                                <p class="text-danger">{{.}}</p>
+                            {{ end }}
+                        {{ end }}
                         <label for="password">パスワード</label>
-                        <input id="password" type="password">
+                        <input id="password" type="password" name="password">
+                        {{ if .Message.password}}
+                            {{ range .Message.password }}
+                                <p class="text-danger">{{.}}</p>
+                            {{ end }}
+                        {{ end }}
                     </div>
                     <div class="myform-group  mb-4">
                         <label for="re-password">パスワード（再入力）</label>
-                        <input id="re-password" type="password">
+                        <input id="re-password" type="password" name="re_password">
+                        {{ if .Message.repassword}}
+                            {{ range .Message.repassword }}
+                                <p class="text-danger">{{.}}</p>
+                            {{ end }}
+                        {{ end }}
                     </div>
                     <div class="myform-group mb-4">
                         <label for="img">アカウント更新</label>

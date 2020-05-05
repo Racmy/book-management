@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/message"
+	"github.com/docker_go_nginx/app/common/appstructure"
 	"github.com/docker_go_nginx/app/db/userdao"
 	"github.com/docker_go_nginx/app/utility/uDB"
 	"github.com/docker_go_nginx/app/utility/ulogin"
@@ -115,7 +116,7 @@ func UserRegistHandler(w http.ResponseWriter, r *http.Request) {
 			uDB.ErrCheck(err)
 			http.Redirect(w, r, appconst.UserRegistURL, http.StatusFound)
 		} else {
-			user := userdao.GetUserInstance(mail, name, password, "")
+			user := userdao.GetUserInstance(0, mail, name, password, "")
 			// エラーがない場合はユーザテーブルに登録
 			registeredUser, err := userdao.InsertUser(user)
 
@@ -179,10 +180,139 @@ func noValueValidation(value string, itemName string, msg *[]string) bool {
 */
 func UserEditHandler(w http.ResponseWriter, r *http.Request) {
 	Tpl, _ := template.ParseGlob("./template/parts/*")
-	Tpl.New(userEditHTMLName).ParseFiles(userTemplatePath + userEditHTMLName)
-	if err := Tpl.ExecuteTemplate(w, userEditHTMLName, nil); err != nil {
-		log.Fatal(err)
+	user, _ := ulogin.GetLoginUser(r)
+	switch r.Method {
+	case http.MethodPost:
+		//ユーザ登録処理
+		// メールアドレスのバリデーション
+		mail := r.FormValue("mail")
+		mailMsg := []string{}
+		if noValueValidation(mail, "メールアドレス", &mailMsg) {
+			reg := regexp.MustCompile(`^.+\@.+\..+$`)
+			if !reg.MatchString(mail) {
+				mailMsg = append(mailMsg, message.ErrEmailStyle)
+			} else {
+				if userdao.IsSetEmailExceptID(mail, user.ID) {
+					mailMsg = append(mailMsg, message.RegisteredEmail)
+				}
+			}
+		} else {
+			mail = ""
+		}
+		// 名前のバリデーション
+		name := r.FormValue("name")
+		nameMsg := []string{}
+		if !noValueValidation(name, "ユーザ名", &nameMsg) {
+			name = ""
+		} else {
+			if userdao.IsSetNameExceptID(name, user.ID) {
+				nameMsg = append(nameMsg, message.RegisteredUserName)
+			}
+		}
+		// パスワードのバリデーション
+		password := r.FormValue("password")
+		passwordMsg := []string{}
+		isSetPassword := noValueValidation(password, "パスワード", &passwordMsg)
+
+		// パスワード（再入力）のバリデーション
+		rePassword := r.FormValue("re_password")
+		rePasswordMsg := []string{}
+		isSetRePassword := noValueValidation(rePassword, "再入力パスワード", &rePasswordMsg)
+
+		// パスワードと再パスワードの一致チェック
+		sokanCheckMsg := []string{}
+		if isSetPassword && isSetRePassword {
+			if password != rePassword {
+				sokanCheckMsg = append(sokanCheckMsg, "パスワードが一致しません。")
+			}
+		}
+
+		errMsgMap := map[string][]string{}
+		viewData := map[string]string{}
+		//　エラーがある場合は登録画面へリダイレクト
+		session, _ := ulogin.GetSession(r)
+		if len(mailMsg) > 0 || len(nameMsg) > 0 || len(passwordMsg) > 0 || len(rePasswordMsg) > 0 || len(sokanCheckMsg) > 0 {
+			// エラーメッセージをmapにつめる
+			errMsgMap["mail"] = mailMsg
+			errMsgMap["name"] = nameMsg
+			errMsgMap["password"] = passwordMsg
+			errMsgMap["repassword"] = rePasswordMsg
+			errMsgMap["sokanCheck"] = sokanCheckMsg
+			// １つ前に入力したデータをmapにつめる
+			viewData["mail"] = mail
+			viewData["name"] = name
+			log.Println(mailMsg)
+			log.Println(nameMsg)
+			log.Println(passwordMsg)
+			log.Println(rePasswordMsg)
+			log.Println(sokanCheckMsg)
+			// sessionにmap形式のデータを追加できるように設定
+			gob.Register(map[string][]string{})
+			gob.Register(map[string]string{})
+
+			// セッションにデータにデータをつめる
+			session.AddFlash(errMsgMap, appconst.SessionMsg)
+			session.AddFlash(viewData, appconst.SessionViewData)
+
+			// セッションの保存
+			err := session.Save(r, w)
+			uDB.ErrCheck(err)
+			http.Redirect(w, r, appconst.UserEditURL, http.StatusFound)
+		} else {
+			pre_user, _ := ulogin.GetLoginUser(r)
+			user := userdao.GetUserInstance(pre_user.ID, mail, name, password, "")
+			// エラーがない場合はユーザテーブルに登録
+			registeredUser, err := userdao.UpdateUser(user)
+
+			// エラー場合は登録画面に戻す
+			if err != nil {
+				uDB.ErrCheck(err)
+				http.Redirect(w, r, appconst.UserEditURL, http.StatusFound)
+			}
+			//　ホーム画面遷移する
+			// ログインセッションに登録
+			gob.Register(userdao.User{})
+			// sessionにmap形式のデータを追加できるように設定
+			gob.Register(map[string][]string{})
+			sucMsg := []string{}
+			sucMsg = append(sucMsg, message.SucMsgUpdate)
+			errMsgMap["sucMsg"] = sucMsg
+			session.AddFlash(errMsgMap, appconst.SessionMsg)
+			// セッションにデータにデータをつめる
+			session.Values[appconst.SessionLoginUser] = registeredUser
+			session.Save(r, w)
+
+			http.Redirect(w, r, appconst.UserEditURL, http.StatusFound)
+		}
+
+	default:
+		// Get・PUT・PATCH・DELETEなどできた場合は編集画面を表示
+		// ユーザ編集画面の表示
+		session, _ := ulogin.GetSession(r)
+
+		viewData := map[string]string{}
+		castedMessage := map[string][]string{}
+		// Tpl.New(userRegistHTMLName).Option("missingkey=zero").ParseFiles(userTemplatePath + userRegistHTMLName)
+		if message := session.Flashes(appconst.SessionMsg); len(message) > 0 {
+			castedMessage = message[0].(map[string][]string)
+		}
+		viewData["mail"] = user.Email
+		viewData["name"] = user.Name
+		// 	session.Save(r, w)
+
+		// 画面表示データ構造作成
+		responseData := appstructure.ResponseData{
+			ViewData: viewData,
+			Message:  castedMessage,
+		}
+		// }
+		Tpl.New(userEditHTMLName).ParseFiles(userTemplatePath + userEditHTMLName)
+		if err := Tpl.ExecuteTemplate(w, userEditHTMLName, responseData); err != nil {
+			log.Fatal(err)
+		}
 	}
+	
+	
 }
 
 /*
