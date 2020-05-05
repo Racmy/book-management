@@ -1,16 +1,15 @@
 {
+
+    "workbench.activityBar.visible": true,
+    "window.zoomLevel": 0,
+    "explorer.confirmDelete": false,
+    "explorer.confirmDragAndDrop": false,
+    "go.lintOnSave": "off",
+    "go.vetOnSave": "off",
     "go.buildOnSave": "off",
-    "go.formatTool": "gofmt",
-    "sqltools.connections": [
-        {
-            "connectionTimeout": 100,
-            "database": "book-management",
-            "dialect": "MySQL",
-            "name": "book-management",
-            "password": "racmy",
-            "port": 3306,
-            "server": "localhost",
-            "username": "racmy"
-        }
-    ]
+    "[go]": {
+    
+    
+    },
+    "go.gocodeAutoBuild": true
 }

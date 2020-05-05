@@ -4,5 +4,5 @@ package appstructure
 type ResponseData struct {
 	ViewData map[string]string
 	Message  map[string][]string
-	loginFlag bool
+	LoginFlag bool
 }
