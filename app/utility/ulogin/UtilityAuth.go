@@ -2,12 +2,14 @@ package ulogin
 
 import (
 	"errors"
+	"log"
+	"net/http"
+
 	"github.com/docker_go_nginx/app/common/appconst"
+	"github.com/docker_go_nginx/app/common/appstructure"
 	"github.com/docker_go_nginx/app/common/message"
 	"github.com/docker_go_nginx/app/db/userdao"
 	"github.com/gorilla/sessions"
-	"log"
-	"net/http"
 )
 
 const (
@@ -117,7 +119,33 @@ func SetSessionFlg(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
 }
 
-func DelSession(w http.ResponseWriter, r *http.Request){
+/*
+セッションから画面データとメッセージを取り出し、ResponseDataにつめた状態で返す
+*/
+func GetViewDataAndMessage(w http.ResponseWriter, r *http.Request) appstructure.ResponseData {
+	// セッションの取得
+	session, _ := GetSession(r)
+
+	var castedMessage map[string][]string
+	var castedViewData map[string]string
+	if message := session.Flashes(appconst.SessionMsg); len(message) > 0 {
+		// 画面データとメッセージの取得
+		castedMessage = message[0].(map[string][]string)
+	}
+	if viewData := session.Flashes(appconst.SessionViewData); len(viewData) > 0 {
+		// 画面データとメッセージの取得
+		castedViewData = viewData[0].(map[string]string)
+	}
+	session.Save(r, w)
+
+	return appstructure.CreateResponseData(castedViewData, castedMessage)
+
+}
+
+/*
+	セッションの破棄
+*/
+func DelSession(w http.ResponseWriter, r *http.Request) {
 	session := sessions.NewSession(store, CookieName)
 	session.Save(r, w)
 }

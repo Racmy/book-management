@@ -9,7 +9,7 @@
                 </div>
                 <form class="col-sm-6" action = "/login" method="POST">
                     <div>
-                        {{ if .Message.nosession}}
+                            {{ if .Message.nosession}}
                                 {{ range .Message.nosession }}
                                     <div class="myform form-group row">
                                         <p class="text-danger">{{.}}</p>
@@ -18,7 +18,7 @@
                             {{ end }}
                         <div class="myform form-group row">
                             <label for="id_input" class="col-md-3">ID</label>
-                            <input id="id_input"class="form-control col-md-9" type="text" name="MailAddress" value="" placeholder="登録時のメールアドレスを入力してください。">
+                            <input id="id_input"class="form-control col-md-9" type="text" name="MailAddress" value="aaa@bbb.com" placeholder="登録時のメールアドレスを入力してください。">
                             {{ if .Message.mail}}
                                 {{ range .Message.mail }}
                                     <p class="text-danger">{{.}}</p>
@@ -27,7 +27,7 @@
                         </div>
                         <div class="myform form-group row">
                             <label for="pw_input" class="col-md-3">パスワード</label>
-                            <input id="pw_input" class="form-control col-md-9" type="password" name="Password" value="" placeholder="">
+                            <input id="pw_input" class="form-control col-md-9" type="password" name="Password" value="p@ssword" placeholder="">
                             {{ if .Message.password}}
                                 {{ range .Message.password }}
                                     <p class="text-danger">{{.}}</p>

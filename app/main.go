@@ -1,16 +1,16 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	"text/template"
+
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/processTemplate"
-	"github.com/docker_go_nginx/app/handler/bookHandler"
 	"github.com/docker_go_nginx/app/handler/authHandler"
 	"github.com/docker_go_nginx/app/handler/userHandler"
 	"github.com/docker_go_nginx/app/utility/ulogin"
 	_ "github.com/go-sql-driver/mysql"
-	"log"
-	"net/http"
-	"text/template"
 )
 
 var rootTemplatePath = "./template/"
@@ -52,7 +52,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 }
-
 
 // ルーティング
 func main() {
