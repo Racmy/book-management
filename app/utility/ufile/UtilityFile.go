@@ -1,12 +1,14 @@
 package ufile
 
 import (
+	"github.com/docker_go_nginx/app/utility/uDB"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -39,13 +41,29 @@ func FileUpload(file multipart.File, filePath string, fileName string) (string, 
 }
 
 /*
-	ファイルをサーバへアップロードする関数
+	"static/img/"配下にファイルをサーバへアップロードする関数
 	@param file 	mulipart.File
 	@param fileName string
 	@param err		err
 */
 func DefaultFileUpload(file multipart.File, fileName string) (string, error) {
 	return FileUpload(file, defaultFileUploadPath, fileName)
+}
+
+/*
+	"static/img/{userid}"配下にファイルをサーバへアップロードする関数
+	@param file 	mulipart.File
+	@param fileName string
+	@param err		err
+*/
+func UserFileUpload(file multipart.File, fileName string, userId int) (string, error) {
+	path := defaultFileUploadPath + "user/" + strconv.Itoa(userId) + "/"
+
+	// フォルダが存在していない場合はフォルダを作成する
+	if !Exists(path) {
+		MakeDir(path)
+	}
+	return FileUpload(file, path, fileName)
 }
 
 /*
@@ -87,7 +105,7 @@ func fileSaved(file multipart.File, fileName string) error {
 	@return fileHeader multipart.FileHeader
 	@return err		error
 */
-func IsSetFile(request *http.Request, name string) (multipart.File, *multipart.FileHeader, error) {
+func ParseFile(request *http.Request, name string) (multipart.File, *multipart.FileHeader, error) {
 	var file multipart.File
 	var fileHeader *multipart.FileHeader
 	file = nil
@@ -105,5 +123,24 @@ func IsSetFile(request *http.Request, name string) (multipart.File, *multipart.F
 	}
 
 	return file, fileHeader, err
+}
 
+// ファイル・フォルダの存在チェック
+func Exists(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
+}
+
+// フォルダの作成
+func MakeDir(path string) bool {
+	slice := strings.Split(path, "/")
+	_path := ""
+	for i := range slice {
+		_path += slice[i] + "/"
+		if !Exists(_path) {
+			err := os.Mkdir(_path, 0775)
+			uDB.ErrCheck(err)
+		}
+	}
+	return true
 }
