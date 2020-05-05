@@ -2,13 +2,14 @@ package ulogin
 
 import (
 	"errors"
+	"log"
+	"net/http"
+
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/appstructure"
 	"github.com/docker_go_nginx/app/common/message"
 	"github.com/docker_go_nginx/app/db/userdao"
 	"github.com/gorilla/sessions"
-	"log"
-	"net/http"
 )
 
 const (
@@ -139,4 +140,12 @@ func GetViewDataAndMessage(w http.ResponseWriter, r *http.Request) appstructure.
 
 	return appstructure.CreateResponseData(castedViewData, castedMessage)
 
+}
+
+/*
+	セッションの破棄
+*/
+func DelSession(w http.ResponseWriter, r *http.Request) {
+	session := sessions.NewSession(store, CookieName)
+	session.Save(r, w)
 }

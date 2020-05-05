@@ -1,4 +1,4 @@
-package loginHandler
+package authHandler
 
 import (
 	"encoding/gob"
@@ -94,5 +94,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values[appconst.SessionLoginUser] = resUser
 	session.Save(r, w)
 	http.Redirect(w, r, appconst.BookURL, http.StatusFound)
+
+}
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	// sessionにmap形式のデータを追加できるように設定
+	ulogin.DelSession(w, r)
+	http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 
 }
