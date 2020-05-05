@@ -3,6 +3,7 @@ package userHandler
 import (
 	"encoding/gob"
 	"github.com/docker_go_nginx/app/common/appconst"
+	"github.com/docker_go_nginx/app/common/message"
 	"github.com/docker_go_nginx/app/db/userdao"
 	"github.com/docker_go_nginx/app/utility/uDB"
 	"github.com/docker_go_nginx/app/utility/ulogin"
@@ -47,10 +48,10 @@ func UserRegistHandler(w http.ResponseWriter, r *http.Request) {
 		if noValueValidation(mail, "メールアドレス", &mailMsg) {
 			reg := regexp.MustCompile(`^.+\@.+\..+$`)
 			if !reg.MatchString(mail) {
-				mailMsg = append(mailMsg, "メールアドレスの形式に誤りがあります。")
+				mailMsg = append(mailMsg, message.ErrEmailStyle)
 			} else {
 				if userdao.IsSetEmail(mail) {
-					mailMsg = append(mailMsg, "登路済みのメールアドレスです。")
+					mailMsg = append(mailMsg, message.RegisteredEmail)
 				}
 			}
 		} else {
@@ -64,7 +65,7 @@ func UserRegistHandler(w http.ResponseWriter, r *http.Request) {
 			name = ""
 		} else {
 			if userdao.IsSetName(name) {
-				nameMsg = append(nameMsg, "登録済みのユーザ名です。")
+				nameMsg = append(nameMsg, message.RegisteredUserName)
 			}
 		}
 

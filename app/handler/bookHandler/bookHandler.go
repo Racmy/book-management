@@ -4,6 +4,7 @@ import (
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/message"
 	"github.com/docker_go_nginx/app/db/bookdao"
+	"github.com/docker_go_nginx/app/utility/uDB"
 	"github.com/docker_go_nginx/app/utility/ufile"
 	"github.com/docker_go_nginx/app/utility/ulogin"
 	"log"
@@ -96,11 +97,15 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 	frontCoverImagePath := ""
 
 	// ファイルオブジェクトを取得
-	file, fileHeader, err := ufile.IsSetFile(r, bookdao.IMGPATH)
+	file, fileHeader, err := ufile.ParseFile(r, bookdao.IMGPATH)
+	uDB.ErrCheck(err)
+
 	//表紙画像がuploadされている時
-	if err == nil {
-		frontCoverImagePath, err = ufile.DefaultFileUpload(file, fileHeader.Filename)
+	userId, err := ulogin.GetLoginUserId(r)
+	if err != nil {
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 	}
+	frontCoverImagePath, err = ufile.UserFileUpload(file, fileHeader.Filename, userId)
 
 	r.ParseForm()
 
@@ -115,8 +120,12 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, url, http.StatusFound)
 	}
 
+	userId, getLoginUserErr := ulogin.GetLoginUserId(r)
+	if getLoginUserErr != nil {
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
+	}
 	insertBook := bookdao.Book{
-		UserID:              ulogin.GetLoginUserId(r),
+		UserID:              userId,
 		Title:               title,
 		Author:              author,
 		LatestIssue:         latestIssue,
@@ -165,8 +174,10 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 
 	Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
 
-	userId := ulogin.GetLoginUserId(r)
-
+	userId, err := ulogin.GetLoginUserId(r)
+	if err != nil {
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
+	}
 	var responseData BookListResponseData
 	responseData.Books = bookdao.GetAllBooksByUserID(userId)
 
@@ -214,7 +225,10 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 	本の検索のためのハンドラ
 */
 func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
-	userId := ulogin.GetLoginUserId(r)
+	userId, err := ulogin.GetLoginUserId(r)
+	if err != nil {
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
+	}
 
 	query := r.URL.Query()
 
@@ -300,7 +314,10 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// ログインユーザの取得
-		userId := ulogin.GetLoginUserId(r)
+		userId, err := ulogin.GetLoginUserId(r)
+		if err != nil {
+			http.Redirect(w, r, appconst.RootURL, http.StatusFound)
+		}
 
 		// 本の更新
 		id, err := bookdao.UpdateBook(updateBook, userId)
@@ -339,11 +356,14 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	/detail →　/book
 */
 func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	userId := ulogin.GetLoginUserId(r)
+	userId, err := ulogin.GetLoginUserId(r)
+	if err != nil {
+		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
+	}
 
 	r.ParseForm()
 	id := r.FormValue(bookdao.ID)
-	err := bookdao.DeleteBookByIdAndUserId(id, userId)
+	err = bookdao.DeleteBookByIdAndUserId(id, userId)
 
 	var errMsg []string
 	// 削除失敗時は詳細画面へ遷移してエラーメッセージを表示
