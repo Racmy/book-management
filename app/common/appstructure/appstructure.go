@@ -1,8 +1,7 @@
 package appstructure
 
-// HomeErrorMessage ...エラーメッセージ格納
-type HomeErrorMessage struct {
-	EmailErr    string
-	PasswordErr string
-	NoUserErr   string
+// 画面用のデータ構造
+type ResponseData struct {
+	ViewData map[string]string
+	Message  map[string][]string
 }
