@@ -71,19 +71,27 @@ func SessionCheck(w http.ResponseWriter, r *http.Request) (*sessions.Session, er
 /*
 ログインユーザの取得
 */
-func GetLoginUser(r *http.Request) userdao.User {
+func GetLoginUser(r *http.Request) (userdao.User, error) {
 	session, _ := GetSession(r)
+	if session.Values[appconst.SessionLoginUser] == nil {
+		err := errors.New("ログインセッションが切れています。")
+		return userdao.User{}, err
+	}
 	user := session.Values[appconst.SessionLoginUser].(userdao.User)
-	return user
+	return user, nil
 }
 
 /*
 ログインユーザIDの取得
 */
-func GetLoginUserId(r *http.Request) int {
+func GetLoginUserId(r *http.Request) (int, error) {
 	session, _ := GetSession(r)
+	if session.Values[appconst.SessionLoginUser] == nil {
+		err := errors.New("ログインセッションが切れています。")
+		return -1, err
+	}
 	user := session.Values[appconst.SessionLoginUser].(userdao.User)
-	return int(user.ID)
+	return int(user.ID), nil
 }
 
 /*
