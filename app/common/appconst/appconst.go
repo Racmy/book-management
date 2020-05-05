@@ -17,6 +17,7 @@ const (
 	BookUpdatehURL        string = BookURL + "/update"
 	BookDeleteURL         string = BookURL + "/delete"
 	LoginURL              string = RootURL + "login"
+	LogoutURL              string = RootURL + "logout"
 	LoginCheckURL         string = LoginURL + "/check"
 )
 
