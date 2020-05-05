@@ -9,7 +9,7 @@
                 </div>
                 <form class="col-sm-6" action = "/login" method="POST">
                     <div>
-                        {{ if .Message.nosession}}
+                            {{ if .Message.nosession}}
                                 {{ range .Message.nosession }}
                                     <div class="myform form-group row">
                                         <p class="text-danger">{{.}}</p>

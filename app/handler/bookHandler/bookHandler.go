@@ -3,7 +3,6 @@ package bookhandler
 import (
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/appstructure"
-	"github.com/docker_go_nginx/app/common/message"
 	"github.com/docker_go_nginx/app/db/bookdao"
 	"github.com/docker_go_nginx/app/utility/uDB"
 	"github.com/docker_go_nginx/app/utility/ufile"
@@ -23,21 +22,6 @@ var bookListHTMLName = "bookList.html"
 var bookDetailHTMLName = "bookDetail.html"
 var bookRegistHTMLName = "bookRegist.html"
 var bookRegistResultHTMLName = "bookRegistResult.html"
-
-// BookListResponseData ...　本一覧画面用のレスポンスデータ
-type BookListResponseData struct {
-	Keyword string
-	Books   []bookdao.Book
-	SucMsg  []string
-}
-
-// BookRegistResponseData ...本登録画面用のレスポンスデータ
-type BookRegistResponseData struct {
-	Title       string
-	Author      string
-	LatestIssue float64
-	ErrString   []string
-}
 
 /*
 	本を登録画面へのハンドラ
@@ -172,18 +156,19 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 
 	Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
 
+	// 画面データとメッセージを取得
+	responseData := ulogin.GetViewDataAndMessage(w, r)
+
 	userId, err := ulogin.GetLoginUserId(r)
 	if err != nil {
 		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 	}
-	var responseData BookListResponseData
-	responseData.Books = bookdao.GetAllBooksByUserID(userId)
 
-	if ulogin.GetSessionFlg(w, r) {
-		responseData.SucMsg = append(responseData.SucMsg, message.SucMsgDel)
-	}
+	// 本一覧をレスポンスデータにセット
+	books := bookdao.GetAllBooksByUserID(userId)
+	responseData.Books = books
 
-	responseData.Keyword = ""
+	// 描画
 	if err := Tpl.ExecuteTemplate(w, bookListHTMLName, responseData); err != nil {
 		log.Fatal(err)
 	}
@@ -266,9 +251,13 @@ func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
 		Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
 
 		// ResponseDataの作成
-		var responseData BookListResponseData
-		responseData.Keyword = keyword
+		// 画面データとメッセージを取得
+		responseData := ulogin.GetViewDataAndMessage(w, r)
 		responseData.Books = bookdao.GetSearchedBooksByKeywordAndUserID(keyword, userId)
+		// 画面データをレスポンスデータにセット
+		viewData := map[string]string{}
+		viewData["keyword"] = keyword
+		responseData.ViewData = viewData
 
 		if err := Tpl.ExecuteTemplate(w, bookListHTMLName, responseData); err != nil {
 			log.Fatal(err)
@@ -423,8 +412,15 @@ func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		//TODO削除失敗メッセージを出す
 		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 	} else {
-		// セッションフラグをONにする
-		ulogin.SetSessionFlg(w, r)
+		// セッションに格納するメッセージの作成
+		message := map[string][]string{}
+		sucMessage := []string{}
+		sucMessage = append(sucMessage, "本の削除が完了しました。")
+		// セッションにメッセージをつめる
+		message["success"] = sucMessage
+		session, _ := ulogin.GetSession(r)
+		session.AddFlash(message, appconst.SessionMsg)
+		session.Save(r, w)
 		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 	}
 }

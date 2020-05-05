@@ -73,10 +73,10 @@ func baseHandler(handler http.Handler, sessionFlg int) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r.URL, r.Method)
 		if sessionFlg == 1 {
-			if ulogin.IsLogined(r){
+			if ulogin.IsLogined(r) {
 				//ログイン済み
 				handler.ServeHTTP(w, r)
-			}else{
+			} else {
 				//未ログインorセッション切れ
 				log.Println("session err")
 				errMsgMap := map[string][]string{}
@@ -84,18 +84,18 @@ func baseHandler(handler http.Handler, sessionFlg int) http.Handler {
 				noSessionMsg := []string{}
 				noSessionMsg = append(noSessionMsg, message.ErrMsgNoSession)
 				errMsgMap["nosession"] = noSessionMsg
-		
+
 				// セッションにエラーメッセージと画面データをつめる
 				session, _ := ulogin.GetSession(r)
 				session.AddFlash(errMsgMap, appconst.SessionMsg)
 
 				viewData["mail"] = ""
 				session.AddFlash(viewData, appconst.SessionViewData)
-				
+
 				session.Save(r, w)
-				http.Redirect(w,r,appconst.RootURL,http.StatusFound)
+				http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 			}
-		}else {
+		} else {
 			handler.ServeHTTP(w, r)
 		}
 	})
