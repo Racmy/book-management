@@ -9,7 +9,7 @@ const (
 	ErrMsgNoEmail    string = "メールアドレスを入力してください。"
 	ErrMsgNoPassword string = "パスワードを入力してください。"
 	ErrMsgNoUserErr  string = "該当のユーザが見つかりませんでした。メールアドレス，パスワードを確かめてください。"
-  ErrMsgNoSession  string = "ログインを行ってください。"
+  	ErrMsgNoSession  string = "ログインを行ってください。"
 )
 
 const (

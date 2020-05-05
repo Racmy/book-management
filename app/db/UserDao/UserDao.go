@@ -16,8 +16,8 @@ type User struct {
 	ImagePath string
 }
 
-func GetUserInstance(email string, name string, password string, imagePath string) User {
-	return User{Email: email, Name: name, Password: password, ImagePath: imagePath}
+func GetUserInstance(id int64,email string, name string, password string, imagePath string) User {
+	return User{ID: id, Email: email, Name: name, Password: password, ImagePath: imagePath}
 }
 
 //GetBookByID ...BookテーブルのIDに紐つく情報を1件取得
@@ -67,6 +67,21 @@ func IsSetEmail(mailAddress string) bool {
 	return rows.Next()
 }
 
+//IsSetEmailExceptID...Userテーブルに登録されているメールアドレスか判定(自身のIDを除く)
+/*
+@param mailAddress string メールアドレス
+@param id int64 ユーザID
+@return bool true：存在する、false：存在しない
+*/
+func IsSetEmailExceptID(mailAddress string,id int64) bool {
+	db := uDB.DbSetUp()
+	defer db.Close()
+	rows, err := db.Query("SELECT id, email, name, user_image_path FROM user WHERE email = ? AND id <> ?", mailAddress, id)
+	defer rows.Close()
+	uDB.ErrCheck(err)
+	return rows.Next()
+}
+
 //IsSetName...Userテーブルに登録されている名前か判定
 /*
 @param name string 名前
@@ -76,6 +91,21 @@ func IsSetName(name string) bool {
 	db := uDB.DbSetUp()
 	defer db.Close()
 	rows, err := db.Query("SELECT id, email, name, user_image_path FROM user WHERE name = ?", name)
+	defer rows.Close()
+	uDB.ErrCheck(err)
+	return rows.Next()
+}
+
+//IsSetName...Userテーブルに登録されている名前か判定(自身のIDを除く)
+/*
+@param name string 名前
+@param id int ユーザID
+@return bool true：存在する、false：存在しない
+*/
+func IsSetNameExceptID(name string, id int64) bool {
+	db := uDB.DbSetUp()
+	defer db.Close()
+	rows, err := db.Query("SELECT id, email, name, user_image_path FROM user WHERE name = ? AND id <> ?", name, id)
 	defer rows.Close()
 	uDB.ErrCheck(err)
 	return rows.Next()
@@ -117,3 +147,40 @@ func InsertUser(user User) (User, error) {
 	user.ID, _ = result.LastInsertId()
 	return user, err
 }
+
+//insertUser ...ユーザの登録
+/*
+@param User　ユーザID未セット
+@return User ユーザIDセット済
+*/
+func UpdateUser(user User) (User, error) {
+	db := uDB.DbSetUp()
+	defer db.Close() // 関数がリターンする直前に呼び出される
+	var err error
+
+	
+	// 登録済メールアドレスか判定
+	// 登録済ユーザ名か判定
+	if IsSetEmailExceptID(user.Email, user.ID) || IsSetNameExceptID(user.Name, user.ID) {
+		err = errors.New("登録済みユーザ名・またはメールアドレスです。")
+		return user, err
+	}
+
+	// 画像ない版
+	if len(user.ImagePath) == 0 {
+		ins, err := db.Prepare("UPDATE user SET email = ?, password = ?, name = ? WHERE ID = ?")
+		uDB.ErrCheck(err)
+		// Userを格納する
+		_, err = ins.Exec(&user.Email, &user.Password, &user.Name , &user.ID)
+		uDB.ErrCheck(err)
+	} else {
+		ins, err := db.Prepare("UPDATE user SET email = ?, password = ?, name = ?, user_image_path = ? WHERE ID = ?")
+		uDB.ErrCheck(err)
+		// Userを格納する
+		_, err = ins.Exec(&user.Email, &user.Password, &user.Name, &user.ImagePath)
+		uDB.ErrCheck(err)
+	}
+
+	return user, err
+}
+
