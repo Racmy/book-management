@@ -155,7 +155,7 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 	}
 
-	Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
+	Tpl.New(bookListHTMLName).Option("missingkey=zero").ParseFiles(bookTemplatePath + bookListHTMLName)
 
 	// 画面データとメッセージを取得
 	responseData := ulogin.GetViewDataAndMessage(w, r)
@@ -185,7 +185,6 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 	// 初回ではない場合はセッションのデータを表示
 	// 更新失敗→本詳細の遷移
 	if len(responseData.ViewData) != 0 {
-		log.Println("piyo")
 		log.Print(responseData)
 		Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
 		if err := Tpl.ExecuteTemplate(w, bookDetailHTMLName, responseData); err != nil {
@@ -196,7 +195,6 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 		//　初回時
 		if id := query.Get("Id"); query.Get("Id") != "" {
-			log.Print("fuga")
 			// 画面からIdを取得し、DBから紐つくデータを取得
 			book, err := bookdao.GetBookByID(id)
 			// データ取得失敗時はホームへ戻す
@@ -362,9 +360,6 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 		}
 
-		log.Println("hoge")
-		log.Println(updateBook.ID)
-
 		// 本の更新
 		updatedBookId, errUpd := bookdao.UpdateBook(updateBook, userId)
 		log.Println(updatedBookId)
@@ -397,7 +392,6 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	/detail →　/book
 */
 func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("hoge")
 	userId, err := ulogin.GetLoginUserId(r)
 	if err != nil {
 		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
@@ -414,8 +408,6 @@ func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		//TODO削除失敗メッセージを出す
 		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 	} else {
-		log.Println("hogehoge")
-
 		// セッションに格納するメッセージの作成
 		message := map[string][]string{}
 		sucMessage := []string{}
