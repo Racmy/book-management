@@ -14,6 +14,7 @@
       <div class="navbar-header">
         <a class="navbar-brand" href="/book">みんなの本棚</a>
       </div>
+      {{ if .LoginFlag }}
       <div id="nav-info">
         <a href="/logout" class="btn btn-primary text-white">ログアウトする</a>
         <a href="/book/regist" class="btn btn-primary text-white">本を登録する</a>
@@ -24,5 +25,6 @@
           <a href="/book/regist" class="btn btn-primary text-white d-block">本を登録する</a>
         </div>
       </div>
+      {{ end }}
     </div>
   </nav>

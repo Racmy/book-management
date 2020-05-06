@@ -71,7 +71,7 @@ func PreHandler(handler http.Handler, sessionFlg int) http.Handler {
 func PostHandler(w http.ResponseWriter, r *http.Request, templatePath string, htmlName string, responseData appstructure.ResponseData) {
 	var Tpl *template.Template
 	Tpl, _ = template.ParseGlob("./template/parts/*")
-	Tpl.New(htmlName).ParseFiles(templatePath + htmlName)
+	Tpl.New(htmlName).Option("missingkey=zero").ParseFiles(templatePath + htmlName)
 	responseData.LoginFlag = ulogin.IsLogined(r)
 	if err := Tpl.ExecuteTemplate(w, htmlName, responseData); err != nil {
 		log.Fatal(err)
