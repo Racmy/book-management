@@ -1,17 +1,18 @@
 package bookHandler
 
 import (
+	"log"
+	"mime/multipart"
+	"net/http"
+	"strconv"
+	"text/template"
+
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/appstructure"
 	"github.com/docker_go_nginx/app/db/bookdao"
 	"github.com/docker_go_nginx/app/utility/uDB"
 	"github.com/docker_go_nginx/app/utility/ufile"
 	"github.com/docker_go_nginx/app/utility/ulogin"
-	"log"
-	"mime/multipart"
-	"net/http"
-	"strconv"
-	"text/template"
 )
 
 var Tpl *template.Template
@@ -154,7 +155,7 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 	}
 
-	Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
+	Tpl.New(bookListHTMLName).Option("missingkey=zero").ParseFiles(bookTemplatePath + bookListHTMLName)
 
 	// 画面データとメッセージを取得
 	responseData := ulogin.GetViewDataAndMessage(w, r)
@@ -178,15 +179,13 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 	本詳細画面へのハンドラ
 */
 func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
+	Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
 	// 更新失敗のハンドリング後の場合はそのデータを利用する
 	responseData := ulogin.GetViewDataAndMessage(w, r)
 
 	// 初回ではない場合はセッションのデータを表示
 	// 更新失敗→本詳細の遷移
 	if len(responseData.ViewData) != 0 {
-		log.Println("piyo")
-		log.Print(responseData)
-		Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
 		if err := Tpl.ExecuteTemplate(w, bookDetailHTMLName, responseData); err != nil {
 			log.Fatal(err)
 		}
@@ -195,7 +194,6 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 		//　初回時
 		if id := query.Get("Id"); query.Get("Id") != "" {
-			log.Print("fuga")
 			// 画面からIdを取得し、DBから紐つくデータを取得
 			book, err := bookdao.GetBookByID(id)
 			// データ取得失敗時はホームへ戻す
@@ -219,8 +217,6 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			responseData = appstructure.CreateResponseData(viewData, message)
-			log.Println(responseData)
-			Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
 			if err := Tpl.ExecuteTemplate(w, bookDetailHTMLName, responseData); err != nil {
 				log.Fatal(err)
 			}
@@ -322,8 +318,6 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		errMsgMap["latestIssue"] = latestIssueMsg
 
 		// 画面データ格納
-		log.Print("hohoho")
-		log.Println(id)
 		viewData["Id"] = id
 		viewData["title"] = title
 		viewData["author"] = author
@@ -361,12 +355,8 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, appconst.RootURL, http.StatusFound)
 		}
 
-		log.Println("hoge")
-		log.Println(updateBook.ID)
-
 		// 本の更新
 		updatedBookId, errUpd := bookdao.UpdateBook(updateBook, userId)
-		log.Println(updatedBookId)
 		// 本の更新に失敗チェック
 		uDB.ErrCheck(errUpd)
 		idString := strconv.Itoa(updatedBookId)
