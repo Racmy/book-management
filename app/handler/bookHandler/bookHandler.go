@@ -29,8 +29,6 @@ var bookRegistResultHTMLName = "bookRegistResult.html"
 	本を登録画面へのハンドラ
 */
 func BookRegistHandler(w http.ResponseWriter, r *http.Request) {
-	Tpl.New(bookRegistHTMLName).Option("missingkey=zero").ParseFiles(bookTemplatePath + bookRegistHTMLName)
-
 	//　セッションから画面表示データを取得
 	responseData := ulogin.GetViewDataAndMessage(w, r)
 
@@ -42,8 +40,6 @@ func BookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	本を登録処理のハンドラ
 */
 func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
-	Tpl.New(bookRegistResultHTMLName).ParseFiles(bookTemplatePath + bookRegistResultHTMLName)
-
 	//表紙画像がuploadされたかどうかを判定するフラグの初期化
 	frontCoverImagePath := ""
 

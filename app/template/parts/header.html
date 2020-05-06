@@ -16,13 +16,15 @@
       </div>
       {{ if .LoginFlag }}
       <div id="nav-info">
-        <a href="/logout" class="btn btn-primary text-white">ログアウトする</a>
-        <a href="/book/regist" class="btn btn-primary text-white">本を登録する</a>
+        <div id="nav-for-pc">
+          <a href="/logout" class="btn btn-primary text-white">ログアウトする</a>
+          <a href="/book/regist" class="btn btn-primary text-white">本を登録する</a>
+        </div>
         <img id="icon" src="/static/img/icon/human.png">
-        <div id="iconInfo">
+        <div id="nav-for-sp">
           <a href="/user/edit" class="btn btn-primary text-white d-block mb-3">ユーザ情報を編集する</a>
-          <a href="/logout" class="btn btn-primary text-white d-block mb-3">ログアウトする</a>
-          <a href="/book/regist" class="btn btn-primary text-white d-block">本を登録する</a>
+          <a href="/book/regist" class="btn btn-primary text-white d-block mb-3">本を登録する</a>
+          <a href="/logout" class="btn btn-primary text-white d-block">ログアウトする</a>
         </div>
       </div>
       {{ end }}

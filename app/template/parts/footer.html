@@ -23,13 +23,13 @@
       fileReader.onloadend = function() {
           $('#preview').html('<img src="' + fileReader.result + '"style="width: 100%; max-height: 380px;"/>');
       }
-      fileReader.
-      readAsDataURL(file);
+      fileReader.readAsDataURL(file);
   });
 
   $(document).on('click', 'nav img#icon', function() {
-    const element = document.getElementById("iconInfo")
-    if(element.style.display == "none"){
+    const element = document.getElementById("nav-for-sp")
+    console.log(element.style.display)
+    if(element.style.display == "none" || element.style.display == ""){
         element.style.display = "block"
     } else {
         element.style.display = "none"

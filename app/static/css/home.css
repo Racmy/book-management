@@ -31,24 +31,38 @@ footer {
     position: relative;
 }
 
+#nav-for-pc {
+    display: none;
+}
+
 /*iconの吹き出し*/
 #icon {
     cursor: pointer;
+    float: right;
+}
+/* スマホ・タブレットのサイズのみアイコンが表示される仕組み */
+@media screen and (max-width: 666px) {
+    #icon {
+        display: none
+    }
+
+    #nav-for-pc {
+        display: inline-block;
+    }
 }
 
-
-#iconInfo {
+#nav-for-sp {
     border: 1px solid black;
     display: none;
     padding: 30px;
     background-color: white;
     z-index: 100;
     position: relative;
-    top: 40px;
+    top: 60px;
     border-radius: 10px;
 }
 
-#iconInfo:before {
+#nav-for-sp:before {
     content: "";
     position: absolute;
     top: -24px;
@@ -59,7 +73,7 @@ footer {
     z-index: 2;
 }
 
-#iconInfo:after {
+#nav-for-sp:after {
     content: "";
     position: absolute;
     top: -30px;
