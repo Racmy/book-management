@@ -1,17 +1,18 @@
 package bookHandler
 
 import (
+	"log"
+	"mime/multipart"
+	"net/http"
+	"strconv"
+	"text/template"
+
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/appstructure"
 	"github.com/docker_go_nginx/app/db/bookdao"
 	"github.com/docker_go_nginx/app/utility/uDB"
 	"github.com/docker_go_nginx/app/utility/ufile"
 	"github.com/docker_go_nginx/app/utility/ulogin"
-	"log"
-	"mime/multipart"
-	"net/http"
-	"strconv"
-	"text/template"
 )
 
 var Tpl *template.Template
@@ -396,6 +397,7 @@ func BookUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	/detail →　/book
 */
 func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("hoge")
 	userId, err := ulogin.GetLoginUserId(r)
 	if err != nil {
 		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
@@ -412,6 +414,8 @@ func BookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		//TODO削除失敗メッセージを出す
 		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 	} else {
+		log.Println("hogehoge")
+
 		// セッションに格納するメッセージの作成
 		message := map[string][]string{}
 		sucMessage := []string{}

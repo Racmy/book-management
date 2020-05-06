@@ -2,10 +2,11 @@ package bookdao
 
 import (
 	"database/sql"
-	"github.com/docker_go_nginx/app/utility/uDB"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/docker_go_nginx/app/utility/uDB"
 )
 
 /**
@@ -259,7 +260,6 @@ func DeleteBookByIdAndUserId(id string, userId int) error {
 	db := uDB.DbSetUp()
 	defer db.Close()
 	_, err := db.Query("DELETE FROM book WHERE id = ? and user_id = ?", id, userId)
-
 	if err != nil {
 		log.Print("【BookDao.DeleteBookByID】" + id + "error can't delete")
 	}
