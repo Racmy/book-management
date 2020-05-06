@@ -2,17 +2,16 @@ package userHandler
 
 import (
 	"encoding/gob"
+	"net/http"
+	"regexp"
+
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/message"
-	"github.com/docker_go_nginx/app/common/appstructure"
+	"github.com/docker_go_nginx/app/common/processTemplate"
 	"github.com/docker_go_nginx/app/db/userdao"
 	"github.com/docker_go_nginx/app/utility/uDB"
 	"github.com/docker_go_nginx/app/utility/ulogin"
 	_ "github.com/go-sql-driver/mysql"
-	"log"
-	"net/http"
-	"regexp"
-	"text/template"
 )
 
 var rootTemplatePath = "./template/"
@@ -39,7 +38,6 @@ const (
 	ユーザを新規登録するハンドラ
 */
 func UserRegistHandler(w http.ResponseWriter, r *http.Request) {
-	Tpl, _ := template.ParseGlob("./template/parts/*")
 	switch r.Method {
 	case http.MethodPost:
 		//ユーザ登録処理
@@ -138,27 +136,9 @@ func UserRegistHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		// Get・PUT・PATCH・DELETEなどできた場合は登録画面を表示
 		// ユーザ登録画面の表示
-		session, _ := ulogin.GetSession(r)
-		// 画面表示データ構造作成
-		responseData := UserRegistResponseData{
-			ViewData: map[string]string{},
-			Message:  nil,
-		}
-		Tpl.New(userRegistHTMLName).Option("missingkey=zero").ParseFiles(userTemplatePath + userRegistHTMLName)
-		if message := session.Flashes(appconst.SessionMsg); len(message) > 0 {
-			castedMessage := message[0].(map[string][]string)
-			viewData := session.Flashes(appconst.SessionViewData)[0].(map[string]string)
-			session.Save(r, w)
-
-			// 画面表示データ構造作成
-			responseData = UserRegistResponseData{
-				ViewData: viewData,
-				Message:  castedMessage,
-			}
-		}
-		if err := Tpl.ExecuteTemplate(w, userRegistHTMLName, responseData); err != nil {
-			log.Fatal(err)
-		}
+		responseData := ulogin.GetViewDataAndMessage(w, r)
+		// 後処理
+		processTemplate.PostHandler(w, r, userTemplatePath, userRegistHTMLName, responseData)
 	}
 }
 
@@ -179,7 +159,6 @@ func noValueValidation(value string, itemName string, msg *[]string) bool {
 	ユーザ情報を更新するハンドラ
 */
 func UserEditHandler(w http.ResponseWriter, r *http.Request) {
-	Tpl, _ := template.ParseGlob("./template/parts/*")
 	user, _ := ulogin.GetLoginUser(r)
 	switch r.Method {
 	case http.MethodPost:
@@ -241,11 +220,6 @@ func UserEditHandler(w http.ResponseWriter, r *http.Request) {
 			// １つ前に入力したデータをmapにつめる
 			viewData["mail"] = mail
 			viewData["name"] = name
-			log.Println(mailMsg)
-			log.Println(nameMsg)
-			log.Println(passwordMsg)
-			log.Println(rePasswordMsg)
-			log.Println(sokanCheckMsg)
 			// sessionにmap形式のデータを追加できるように設定
 			gob.Register(map[string][]string{})
 			gob.Register(map[string]string{})
@@ -286,53 +260,29 @@ func UserEditHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	default:
-		// Get・PUT・PATCH・DELETEなどできた場合は編集画面を表示
-		// ユーザ編集画面の表示
-		session, _ := ulogin.GetSession(r)
-
-		viewData := map[string]string{}
-		castedMessage := map[string][]string{}
-		// Tpl.New(userRegistHTMLName).Option("missingkey=zero").ParseFiles(userTemplatePath + userRegistHTMLName)
-		if message := session.Flashes(appconst.SessionMsg); len(message) > 0 {
-			castedMessage = message[0].(map[string][]string)
-		}
-		viewData["mail"] = user.Email
-		viewData["name"] = user.Name
-		// 	session.Save(r, w)
-
-		// 画面表示データ構造作成
-		responseData := appstructure.ResponseData{
-			ViewData: viewData,
-			Message:  castedMessage,
-		}
-		// }
-		Tpl.New(userEditHTMLName).ParseFiles(userTemplatePath + userEditHTMLName)
-		if err := Tpl.ExecuteTemplate(w, userEditHTMLName, responseData); err != nil {
-			log.Fatal(err)
-		}
+		// セッションに残っっている画面データ等を含めたレスポンスデータの取得
+		responseData := ulogin.GetViewDataAndMessage(w, r)
+		// 後処理
+		processTemplate.PostHandler(w, r, userTemplatePath, userEditHTMLName, responseData)
 	}
-	
-	
 }
 
 /*
 	ユーザのログインパスワード再発行
 */
 func UserPassWordOrderHandler(w http.ResponseWriter, r *http.Request) {
-	Tpl, _ := template.ParseGlob("./template/parts/*")
-	Tpl.New(userPasswordOrderHTMLName).ParseFiles(userTemplatePath + userPasswordOrderHTMLName)
-	if err := Tpl.ExecuteTemplate(w, userPasswordOrderHTMLName, nil); err != nil {
-		log.Fatal(err)
-	}
+	// セッションに残っっている画面データ等を含めたレスポンスデータの取得
+	responseData := ulogin.GetViewDataAndMessage(w, r)
+	// 後処理
+	processTemplate.PostHandler(w, r, userTemplatePath, userPasswordOrderHTMLName, responseData)
 }
 
 /*
 	ユーザのパスワード再登録画面
 */
 func UserPasswordRegist(w http.ResponseWriter, r *http.Request) {
-	Tpl, _ := template.ParseGlob("./template/parts/*")
-	Tpl.New(userPasswordRegistHTMLName).ParseFiles(userTemplatePath + userPasswordRegistHTMLName)
-	if err := Tpl.ExecuteTemplate(w, userPasswordRegistHTMLName, nil); err != nil {
-		log.Fatal(err)
-	}
+	// セッションに残っっている画面データ等を含めたレスポンスデータの取得
+	responseData := ulogin.GetViewDataAndMessage(w, r)
+	// 後処理
+	processTemplate.PostHandler(w, r, userTemplatePath, userPasswordRegistHTMLName, responseData)
 }
