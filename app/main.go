@@ -1,14 +1,13 @@
 package main
 
 import (
-	"log"
 	"net/http"
-	"text/template"
+
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/processTemplate"
 	"github.com/docker_go_nginx/app/handler/authHandler"
-	"github.com/docker_go_nginx/app/handler/userHandler"
 	"github.com/docker_go_nginx/app/handler/bookHandler"
+	"github.com/docker_go_nginx/app/handler/userHandler"
 	"github.com/docker_go_nginx/app/utility/ulogin"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -17,46 +16,18 @@ var rootTemplatePath = "./template/"
 var homeTemplatePath = rootTemplatePath + "home/"
 var homeHTMLName = "index.html"
 
-// ホーム画面用の画面データ構造
-type HomeResponseData struct {
-	ViewData map[string]string
-	Message  map[string][]string
-}
-
 /*
 	ホーム画面を表示するハンドラ
 */
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	Tpl, _ := template.ParseGlob("./template/parts/*")
-	Tpl.New(homeHTMLName).ParseFiles(homeTemplatePath + homeHTMLName)
-	session, _ := ulogin.GetSession(r)
-
-	// 画面表示データ構造作成
-	responseData := HomeResponseData{
-		ViewData: map[string]string{},
-		Message:  nil,
-	}
-
-	if message := session.Flashes(appconst.SessionMsg); len(message) > 0 {
-		castedMessage := message[0].(map[string][]string)
-		viewData := session.Flashes(appconst.SessionViewData)[0].(map[string]string)
-		session.Save(r, w)
-		// 画面表示データ構造作成
-		responseData = HomeResponseData{
-			ViewData: viewData,
-			Message:  castedMessage,
-		}
-	}
-
-	if err := Tpl.ExecuteTemplate(w, homeHTMLName, responseData); err != nil {
-		log.Fatal(err)
-	}
+	// セッションに残っっている画面データ等を含めたレスポンスデータの取得
+	responseData := ulogin.GetViewDataAndMessage(w, r)
+	// 後処理
+	processTemplate.PostHandler(w, r, homeTemplatePath, homeHTMLName, responseData)
 }
 
 // ルーティング
 func main() {
-	bookHandler.Tpl, _ = template.ParseGlob("./template/parts/*")
-
 	// ホーム画面のハンドラ
 	http.Handle(appconst.RootURL, processTemplate.BaseHandlerFunc(homeHandler, 0))
 	// ユーザ登録のハンドラ
