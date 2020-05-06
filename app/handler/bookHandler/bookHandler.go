@@ -9,6 +9,7 @@ import (
 
 	"github.com/docker_go_nginx/app/common/appconst"
 	"github.com/docker_go_nginx/app/common/appstructure"
+	"github.com/docker_go_nginx/app/common/processTemplate"
 	"github.com/docker_go_nginx/app/db/bookdao"
 	"github.com/docker_go_nginx/app/utility/uDB"
 	"github.com/docker_go_nginx/app/utility/ufile"
@@ -33,9 +34,8 @@ func BookRegistHandler(w http.ResponseWriter, r *http.Request) {
 	//　セッションから画面表示データを取得
 	responseData := ulogin.GetViewDataAndMessage(w, r)
 
-	if err := Tpl.ExecuteTemplate(w, bookRegistHTMLName, responseData); err != nil {
-		log.Fatal(err)
-	}
+	// 後処理
+	processTemplate.PostHandler(w, r, bookTemplatePath, bookRegistHTMLName, responseData)
 }
 
 /*
@@ -102,8 +102,10 @@ func BookInsertHandler(w http.ResponseWriter, r *http.Request) {
 
 		// 本登録画面へ遷移
 		http.Redirect(w, r, appconst.BookRegistURL, http.StatusFound)
+		return
 	}
 
+	// 以降、入力エラーがないためデータ登録処理
 	userId, getLoginUserErr := ulogin.GetLoginUserId(r)
 	if getLoginUserErr != nil {
 		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
@@ -150,13 +152,6 @@ func BookInsertResultHandler(w http.ResponseWriter, r *http.Request) {
 	本棚画面へのハンドラ
 */
 func BookListHandler(w http.ResponseWriter, r *http.Request) {
-	// 未ログインの場合はホームへリダイレクト
-	if !ulogin.IsLogined(r) {
-		http.Redirect(w, r, appconst.RootURL, http.StatusFound)
-	}
-
-	Tpl.New(bookListHTMLName).Option("missingkey=zero").ParseFiles(bookTemplatePath + bookListHTMLName)
-
 	// 画面データとメッセージを取得
 	responseData := ulogin.GetViewDataAndMessage(w, r)
 
@@ -170,25 +165,21 @@ func BookListHandler(w http.ResponseWriter, r *http.Request) {
 	responseData.Books = books
 
 	// 描画
-	if err := Tpl.ExecuteTemplate(w, bookListHTMLName, responseData); err != nil {
-		log.Fatal(err)
-	}
+	processTemplate.PostHandler(w, r, bookTemplatePath, bookListHTMLName, responseData)
 }
 
 /*
 	本詳細画面へのハンドラ
 */
 func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
-	Tpl.New(bookDetailHTMLName).ParseFiles(bookTemplatePath + bookDetailHTMLName)
 	// 更新失敗のハンドリング後の場合はそのデータを利用する
 	responseData := ulogin.GetViewDataAndMessage(w, r)
 
 	// 初回ではない場合はセッションのデータを表示
 	// 更新失敗→本詳細の遷移
 	if len(responseData.ViewData) != 0 {
-		if err := Tpl.ExecuteTemplate(w, bookDetailHTMLName, responseData); err != nil {
-			log.Fatal(err)
-		}
+		// 描画
+		processTemplate.PostHandler(w, r, bookTemplatePath, bookDetailHTMLName, responseData)
 	} else {
 		// クエリの取得
 		query := r.URL.Query()
@@ -217,9 +208,8 @@ func BookDetailHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			responseData = appstructure.CreateResponseData(viewData, message)
-			if err := Tpl.ExecuteTemplate(w, bookDetailHTMLName, responseData); err != nil {
-				log.Fatal(err)
-			}
+			// 描画
+			processTemplate.PostHandler(w, r, bookTemplatePath, bookDetailHTMLName, responseData)
 		}
 
 		// クエリにIDがない場合は本一覧にリダイレクト
@@ -244,8 +234,6 @@ func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 		}
 
-		Tpl.New(bookListHTMLName).ParseFiles(bookTemplatePath + bookListHTMLName)
-
 		// ResponseDataの作成
 		// 画面データとメッセージを取得
 		responseData := ulogin.GetViewDataAndMessage(w, r)
@@ -255,9 +243,9 @@ func BookSearchHandler(w http.ResponseWriter, r *http.Request) {
 		viewData["keyword"] = keyword
 		responseData.ViewData = viewData
 
-		if err := Tpl.ExecuteTemplate(w, bookListHTMLName, responseData); err != nil {
-			log.Fatal(err)
-		}
+		// 描画
+		processTemplate.PostHandler(w, r, bookTemplatePath, bookListHTMLName, responseData)
+
 	} else {
 		http.Redirect(w, r, appconst.BookURL, http.StatusFound)
 	}
